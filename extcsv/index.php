@@ -150,7 +150,7 @@ foreach ($sources as $source) {
         html_writer::link(
             new moodle_url('/local/extcsv/edit.php', ['id' => $sourceid]),
             $source->get('name')
-        ) . ' (' . $rowcount . ' ' . get_string('rows', 'core') . ')',
+        ) . ' (' . $rowcount . ' ' . get_string('rows', 'local_extcsv') . ')',
         html_writer::span(get_string("status_{$status}", 'local_extcsv'), $statusclass),
         get_string("content_type_{$source->get('content_type')}", 'local_extcsv'),
         $lastupdatestr,

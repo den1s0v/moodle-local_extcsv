@@ -127,4 +127,5 @@ $string['samplerows'] = 'Примеры строк';
 $string['row'] = 'Строка';
 $string['nodata'] = 'Данные не найдены';
 $string['totalrows'] = 'Всего строк: {$a}';
+$string['rows'] = 'строк';
 

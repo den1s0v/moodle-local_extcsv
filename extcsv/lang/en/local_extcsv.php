@@ -127,4 +127,5 @@ $string['samplerows'] = 'Sample rows';
 $string['row'] = 'Row';
 $string['nodata'] = 'No data found';
 $string['totalrows'] = 'Total rows: {$a}';
+$string['rows'] = 'rows';
 
