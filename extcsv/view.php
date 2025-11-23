@@ -34,17 +34,15 @@ source_manager::require_manage_capability();
 
 // Get source ID
 $id = required_param('id', PARAM_INT);
-// Load source directly to avoid potential memory issues
+// Load source directly from DB to avoid persistent memory issues
 global $DB;
-$sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
-$source = new \local_extcsv\source();
-$source->from_record($sourcerecord);
+$sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], 'id, name, columns_config', MUST_EXIST);
 
 // Page setup
 $PAGE->set_context(context_system::instance());
 $PAGE->set_url(new moodle_url('/local/extcsv/view.php', ['id' => $id]));
 $PAGE->set_title(get_string('viewdata', 'local_extcsv'));
-$PAGE->set_heading(get_string('viewdata', 'local_extcsv') . ': ' . $source->get('name'));
+$PAGE->set_heading(get_string('viewdata', 'local_extcsv') . ': ' . $sourcerecord->name);
 $PAGE->set_pagelayout('admin');
 
 // Breadcrumb
@@ -55,13 +53,44 @@ $PAGE->navbar->add(get_string('viewdata', 'local_extcsv'));
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = 50;
 
-// Get data with pagination
+// Get column configuration first - parse directly from DB record
+$columnsconfig = null;
+if (!empty($sourcerecord->columns_config)) {
+    $decoded = json_decode($sourcerecord->columns_config, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+        $columnsconfig = $decoded;
+    }
+}
+
+// Build list of fields to select and headers based on column mapping
+$fields = ['id', 'sourceid', 'rownum'];
+$headers = ['ID', get_string('row', 'local_extcsv')];
+$fieldmapping = [];
+$headerfieldmapping = [];
+
+if ($columnsconfig && !empty($columnsconfig['columns'])) {
+    foreach ($columnsconfig['columns'] as $colconfig) {
+        $shortname = $colconfig['short_name'] ?? null;
+        $type = $colconfig['type'] ?? 'text';
+        $slot = $colconfig['slot'] ?? null;
+
+        if ($shortname && $slot !== null) {
+            $fieldname = data_manager::get_field_name($type, $slot);
+            if ($fieldname && !in_array($fieldname, $fields)) {
+                $fields[] = $fieldname;
+                $fieldmapping[] = $fieldname;
+                $headers[] = htmlspecialchars($shortname);
+                $headerfieldmapping[] = $fieldname;
+            }
+        }
+    }
+}
+
+// Get data with pagination - only select needed fields to save memory
 $total = data_manager::count_source_data($id);
 $limitfrom = $page * $perpage;
-$data = data_manager::get_source_data($id, $limitfrom, $perpage);
-
-// Get column configuration
-$columnsconfig = \local_extcsv\data_manager::parse_columns_config($source);
+$fieldslist = implode(',', $fields);
+$data = data_manager::get_source_data($id, $limitfrom, $perpage, $fieldslist);
 
 // Output
 echo $OUTPUT->header();
@@ -89,27 +118,8 @@ if ($total == 0) {
     $table = new html_table();
     $table->attributes['class'] = 'generaltable';
 
-    // Build headers from column config
-    $headers = ['ID', get_string('row', 'local_extcsv')];
-    $fieldmapping = [];
-
-    if ($columnsconfig && !empty($columnsconfig['columns'])) {
-        foreach ($columnsconfig['columns'] as $colconfig) {
-            $shortname = $colconfig['short_name'] ?? null;
-            $type = $colconfig['type'] ?? 'text';
-            $slot = $colconfig['slot'] ?? null;
-
-            if ($shortname && $slot !== null) {
-                $fieldname = data_manager::get_field_name($type, $slot);
-                if ($fieldname) {
-                    $headers[] = htmlspecialchars($shortname);
-                    $fieldmapping[] = $fieldname;
-                }
-            }
-        }
-    }
-
-    if (empty($fieldmapping)) {
+    // Headers and fieldmapping were already built above
+    if (empty($headerfieldmapping)) {
         // No mapping, show limited info
         $table->head = ['ID', get_string('row', 'local_extcsv'), get_string('info', 'core')];
         foreach ($data as $record) {
@@ -125,7 +135,7 @@ if ($total == 0) {
         $table->head = $headers;
         foreach ($data as $record) {
             $row = [$record->id, $record->rownum];
-            foreach ($fieldmapping as $fieldname) {
+            foreach ($headerfieldmapping as $fieldname) {
                 $value = $record->$fieldname ?? '';
                 // Limit text length to avoid memory issues
                 if (is_string($value) && strlen($value) > 200) {
