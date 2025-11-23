@@ -103,7 +103,15 @@ class source_manager {
      * @return source
      */
     public static function create_source($data) {
-        $source = new source(0, $data);
+        // Filter only allowed fields from form data
+        $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
+        $sourcedata = new \stdClass();
+        foreach ($allowedfields as $field) {
+            if (isset($data->$field)) {
+                $sourcedata->$field = $data->$field;
+            }
+        }
+        $source = new source(0, $sourcedata);
         $source->save();
         return $source;
     }
@@ -121,12 +129,16 @@ class source_manager {
         if (!$source) {
             throw new moodle_exception('sourcenotfound', 'local_extcsv');
         }
-        foreach ((array)$data as $key => $value) {
-            try {
-                $source->set($key, $value);
-            } catch (\coding_exception $e) {
-                // Property doesn't exist, skip it
-                continue;
+        // Filter only allowed fields from form data (exclude system fields)
+        $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
+        foreach ($allowedfields as $field) {
+            if (isset($data->$field)) {
+                try {
+                    $source->set($field, $data->$field);
+                } catch (\coding_exception $e) {
+                    // Property doesn't exist or invalid value, skip it
+                    continue;
+                }
             }
         }
         $source->save();
