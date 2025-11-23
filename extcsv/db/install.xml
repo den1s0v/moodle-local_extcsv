@@ -73,11 +73,11 @@
         <FIELD NAME="int18" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="int19" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="int20" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float1" TYPE="number" LENGTH="20,10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float2" TYPE="number" LENGTH="20,10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float3" TYPE="number" LENGTH="20,10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float4" TYPE="number" LENGTH="20,10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float5" TYPE="number" LENGTH="20,10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float1" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float2" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float3" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float4" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float5" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="bool1" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="bool2" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="bool3" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
