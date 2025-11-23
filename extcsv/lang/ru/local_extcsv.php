@@ -51,6 +51,8 @@ $string['schedule_cron'] = 'Cron выражение';
 $string['schedule_mode'] = 'Режим расписания';
 $string['schedule_mode_simple'] = 'Простой (интервал)';
 $string['schedule_mode_advanced'] = 'Продвинутый (cron)';
+$string['url_help'] = 'URL источника данных. Может быть прямая ссылка на CSV/TSV файл или ссылка на Google Таблицу. Для Google Таблиц будет автоматически создан URL экспорта.';
+$string['schedule_cron_help'] = 'Cron выражение для автоматического обновления данных. Формат: минута час день месяц день_недели. Например: "0 2 * * *" - каждый день в 2:00. Оставьте пустым для ручного обновления.';
 
 // Time intervals
 $string['interval_minutes'] = 'минут';

@@ -140,11 +140,13 @@ class source_form extends moodleform {
 
         // Validate schedule
         if ($data['schedule_mode'] === 'simple') {
-            if (empty($data['interval_value']) || $data['interval_value'] <= 0) {
+            // Interval is optional, but if provided must be positive
+            if (!empty($data['interval_value']) && $data['interval_value'] <= 0) {
                 $errors['schedule_interval'] = get_string('invalidinterval', 'local_extcsv');
             }
         } else {
-            if (empty($data['schedule_cron'])) {
+            // Cron expression is required in advanced mode
+            if (empty(trim($data['schedule_cron']))) {
                 $errors['schedule_cron'] = get_string('required');
             }
         }
@@ -175,9 +177,15 @@ class source_form extends moodleform {
         if ($data) {
             // Build schedule string
             if ($data->schedule_mode === 'simple') {
-                $data->schedule = $data->interval_value . ' ' . $data->interval_unit;
+                // If interval is provided, build schedule string, otherwise set to null
+                if (!empty($data->interval_value) && $data->interval_value > 0) {
+                    $data->schedule = $data->interval_value . ' ' . $data->interval_unit;
+                } else {
+                    $data->schedule = null;
+                }
             } else {
-                $data->schedule = $data->schedule_cron;
+                // Advanced mode: use cron expression, trim whitespace
+                $data->schedule = !empty($data->schedule_cron) ? trim($data->schedule_cron) : null;
             }
         }
         return $data;

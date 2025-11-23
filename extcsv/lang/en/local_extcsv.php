@@ -51,6 +51,8 @@ $string['schedule_cron'] = 'Cron expression';
 $string['schedule_mode'] = 'Schedule mode';
 $string['schedule_mode_simple'] = 'Simple (interval)';
 $string['schedule_mode_advanced'] = 'Advanced (cron)';
+$string['url_help'] = 'Source data URL. Can be a direct link to CSV/TSV file or a Google Sheets link. For Google Sheets, export URL will be automatically generated.';
+$string['schedule_cron_help'] = 'Cron expression for automatic data updates. Format: minute hour day month dayofweek. Example: "0 2 * * *" - every day at 2:00. Leave empty for manual updates only.';
 
 // Time intervals
 $string['interval_minutes'] = 'minutes';
