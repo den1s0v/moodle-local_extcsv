@@ -208,5 +208,50 @@ class source_manager {
         $context = context_system::instance();
         require_capability('local/extcsv:manage_sources', $context);
     }
+
+    /**
+     * Manually update source data
+     *
+     * @param int $id Source ID
+     * @return array ['success' => bool, 'message' => string, 'saved' => int]
+     * @throws moodle_exception
+     */
+    public static function update_source_manual($id) {
+        $source = self::get_source($id);
+        if (!$source) {
+            throw new moodle_exception('sourcenotfound', 'local_extcsv');
+        }
+
+        try {
+            // Mark as pending
+            $source->set_update_status(source::UPDATE_STATUS_PENDING);
+
+            // Import data
+            $rows = csv_importer::import_from_source($source);
+
+            // Save data
+            $saved = data_manager::save_csv_data($source, $rows);
+
+            // Mark as success
+            $source->set_update_status(source::UPDATE_STATUS_SUCCESS);
+
+            return [
+                'success' => true,
+                'message' => get_string('sourceupdatesuccess', 'local_extcsv', $saved),
+                'saved' => $saved
+            ];
+
+        } catch (\Exception $e) {
+            // Mark as error
+            $error = $e->getMessage();
+            $source->set_update_status(source::UPDATE_STATUS_ERROR, $error);
+
+            return [
+                'success' => false,
+                'message' => get_string('sourceupdateerror', 'local_extcsv', $error),
+                'saved' => 0
+            ];
+        }
+    }
 }
 

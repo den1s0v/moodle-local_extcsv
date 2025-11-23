@@ -304,15 +304,17 @@ class data_manager {
      * @param int $sourceid
      * @param int $limitfrom
      * @param int $limitnum
+     * @param string $fields Fields to select (default: '*' for all fields)
      * @return array
      */
-    public static function get_source_data($sourceid, $limitfrom = 0, $limitnum = 0) {
+    public static function get_source_data($sourceid, $limitfrom = 0, $limitnum = 0, $fields = '*') {
         global $DB;
-        return $DB->get_records(
+        return $DB->get_records_select(
             'local_extcsv_data',
+            'sourceid = :sourceid',
             ['sourceid' => $sourceid],
             'rownum ASC',
-            '*',
+            $fields,
             $limitfrom,
             $limitnum
         );

@@ -27,6 +27,7 @@ require_once($CFG->libdir . '/adminlib.php');
 
 use local_extcsv\source_manager;
 use local_extcsv\data_manager;
+use local_extcsv\csv_importer;
 
 // Check permissions
 source_manager::require_manage_capability();
@@ -62,6 +63,15 @@ if ($action === 'delete' && $id) {
             echo $OUTPUT->footer();
             exit;
         }
+    }
+}
+
+if ($action === 'update' && $id && confirm_sesskey()) {
+    $result = source_manager::update_source_manual($id);
+    if ($result['success']) {
+        redirect($PAGE->url, $result['message'], null, \core\output\notification::NOTIFY_SUCCESS);
+    } else {
+        redirect($PAGE->url, $result['message'], null, \core\output\notification::NOTIFY_ERROR);
     }
 }
 
@@ -139,6 +149,11 @@ foreach ($sources as $source) {
         new moodle_url('/local/extcsv/view.php', ['id' => $sourceid]),
         get_string('viewdata', 'local_extcsv'),
         ['class' => 'btn btn-sm btn-primary']
+    );
+    $actions[] = html_writer::link(
+        new moodle_url($PAGE->url, ['action' => 'update', 'id' => $sourceid, 'sesskey' => sesskey()]),
+        get_string('updatenow', 'local_extcsv'),
+        ['class' => 'btn btn-sm btn-success']
     );
     $actions[] = html_writer::link(
         new moodle_url($PAGE->url, ['action' => 'delete', 'id' => $sourceid, 'sesskey' => sesskey()]),

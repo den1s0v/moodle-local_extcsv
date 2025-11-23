@@ -128,4 +128,7 @@ $string['row'] = 'Row';
 $string['nodata'] = 'No data found';
 $string['totalrows'] = 'Total rows: {$a}';
 $string['rows'] = 'rows';
+$string['updatenow'] = 'Update now';
+$string['sourceupdatesuccess'] = 'Source updated successfully. Saved {$a} rows.';
+$string['sourceupdateerror'] = 'Error updating source: {$a}';
 

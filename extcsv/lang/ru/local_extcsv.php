@@ -128,4 +128,7 @@ $string['row'] = 'Строка';
 $string['nodata'] = 'Данные не найдены';
 $string['totalrows'] = 'Всего строк: {$a}';
 $string['rows'] = 'строк';
+$string['updatenow'] = 'Обновить сейчас';
+$string['sourceupdatesuccess'] = 'Источник успешно обновлён. Сохранено строк: {$a}.';
+$string['sourceupdateerror'] = 'Ошибка при обновлении источника: {$a}';
 

@@ -95,6 +95,17 @@ $data = data_manager::get_source_data($id, $limitfrom, $perpage, $fieldslist);
 // Output
 echo $OUTPUT->header();
 
+// Handle update action
+$action = optional_param('action', '', PARAM_ALPHA);
+if ($action === 'update' && confirm_sesskey()) {
+    $result = source_manager::update_source_manual($id);
+    if ($result['success']) {
+        redirect($PAGE->url, $result['message'], null, \core\output\notification::NOTIFY_SUCCESS);
+    } else {
+        redirect($PAGE->url, $result['message'], null, \core\output\notification::NOTIFY_ERROR);
+    }
+}
+
 echo html_writer::div(
     html_writer::link(
         new moodle_url('/local/extcsv/index.php'),
@@ -105,6 +116,11 @@ echo html_writer::div(
         new moodle_url('/local/extcsv/edit.php', ['id' => $id]),
         get_string('edit'),
         ['class' => 'btn btn-primary']
+    ) . ' ' .
+    html_writer::link(
+        new moodle_url($PAGE->url, ['action' => 'update', 'sesskey' => sesskey()]),
+        get_string('updatenow', 'local_extcsv'),
+        ['class' => 'btn btn-success']
     ),
     'mb-3'
 );
