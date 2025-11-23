@@ -135,8 +135,17 @@ class source_manager {
         if (!$source) {
             throw new moodle_exception('sourcenotfound', 'local_extcsv');
         }
-        // Filter only allowed fields from form data (exclude system fields)
+        // Ensure we're updating an existing record (check ID)
+        $sourceid = $source->get('id');
+        if (empty($sourceid) || $sourceid != $id) {
+            throw new moodle_exception('sourcenotfound', 'local_extcsv');
+        }
+        // Filter only allowed fields from form data (exclude system fields and id)
         $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
+        // Explicitly exclude id from being set
+        if (isset($data->id)) {
+            unset($data->id);
+        }
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
                 try {
@@ -147,6 +156,12 @@ class source_manager {
                 }
             }
         }
+        // Double-check that ID is still set before saving
+        $finalid = $source->get('id');
+        if (empty($finalid) || $finalid != $id) {
+            throw new moodle_exception('sourcenotfound', 'local_extcsv');
+        }
+        // save() will update existing record if ID is set and object was loaded from DB
         $source->save();
         return $source;
     }

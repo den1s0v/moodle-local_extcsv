@@ -63,8 +63,11 @@ if ($form->is_cancelled()) {
 
 if ($data = $form->get_data()) {
     try {
-        if ($id) {
-            source_manager::update_source($id, $data);
+        // Get ID from form data or URL parameter
+        $sourceid = !empty($data->id) ? (int)$data->id : $id;
+        
+        if ($sourceid) {
+            source_manager::update_source($sourceid, $data);
             $message = get_string('sourceupdated', 'local_extcsv');
         } else {
             source_manager::create_source($data);

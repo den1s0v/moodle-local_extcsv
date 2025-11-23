@@ -46,6 +46,12 @@ class source_form extends moodleform {
         $mform = $this->_form;
         $source = $this->_customdata['source'] ?? null;
 
+        // Hidden field for ID (if editing)
+        if ($source && $source->get('id')) {
+            $mform->addElement('hidden', 'id', $source->get('id'));
+            $mform->setType('id', PARAM_INT);
+        }
+
         // Name
         $mform->addElement('text', 'name', get_string('name', 'local_extcsv'), ['size' => 50]);
         $mform->setType('name', PARAM_TEXT);
