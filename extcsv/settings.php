@@ -27,9 +27,6 @@ defined('MOODLE_INTERNAL') || die();
 if ($hassiteconfig) {
     $ADMIN->add('localplugins', new admin_category('local_extcsv', get_string('pluginname', 'local_extcsv')));
 
-    $settings = new admin_settingpage('local_extcsv_settings', get_string('settings', 'admin'));
-    $ADMIN->add('local_extcsv', $settings);
-
     $ADMIN->add('local_extcsv', new admin_externalpage(
         'local_extcsv_manage',
         get_string('managesources', 'local_extcsv'),
