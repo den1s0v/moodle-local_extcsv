@@ -111,7 +111,13 @@ class source_manager {
                 $sourcedata->$field = $data->$field;
             }
         }
-        $source = new source(0, $sourcedata);
+        // Create source without passing data directly to constructor to avoid validation issues
+        $source = new source();
+        foreach ($allowedfields as $field) {
+            if (isset($sourcedata->$field)) {
+                $source->set($field, $sourcedata->$field);
+            }
+        }
         $source->save();
         return $source;
     }

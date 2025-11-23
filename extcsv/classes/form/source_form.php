@@ -187,6 +187,20 @@ class source_form extends moodleform {
                 // Advanced mode: use cron expression, trim whitespace
                 $data->schedule = !empty($data->schedule_cron) ? trim($data->schedule_cron) : null;
             }
+            
+            // Remove form helper fields that shouldn't be saved
+            unset($data->schedule_mode);
+            unset($data->interval_value);
+            unset($data->interval_unit);
+            unset($data->schedule_cron);
+            
+            // Ensure system fields are not present
+            unset($data->id);
+            unset($data->timecreated);
+            unset($data->timemodified);
+            unset($data->lastupdate);
+            unset($data->lastupdatestatus);
+            unset($data->lastupdateerror);
         }
         return $data;
     }

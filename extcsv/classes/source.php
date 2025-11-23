@@ -128,11 +128,6 @@ class source extends persistent {
                 'type' => PARAM_TEXT,
                 'default' => null,
                 'null' => NULL_ALLOWED,
-                'choices' => [
-                    self::UPDATE_STATUS_SUCCESS,
-                    self::UPDATE_STATUS_ERROR,
-                    self::UPDATE_STATUS_PENDING,
-                ],
             ],
             'lastupdateerror' => [
                 'type' => PARAM_TEXT,
