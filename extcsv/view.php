@@ -34,10 +34,11 @@ source_manager::require_manage_capability();
 
 // Get source ID
 $id = required_param('id', PARAM_INT);
-$source = source_manager::get_source($id);
-if (!$source) {
-    throw new moodle_exception('sourcenotfound', 'local_extcsv');
-}
+// Load source directly to avoid potential memory issues
+global $DB;
+$sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
+$source = new \local_extcsv\source();
+$source->from_record($sourcerecord);
 
 // Page setup
 $PAGE->set_context(context_system::instance());
@@ -54,9 +55,10 @@ $PAGE->navbar->add(get_string('viewdata', 'local_extcsv'));
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = 50;
 
-// Get data
+// Get data with pagination
 $total = data_manager::count_source_data($id);
-$data = data_manager::get_source_data($id, $page * $perpage, $perpage);
+$limitfrom = $page * $perpage;
+$data = data_manager::get_source_data($id, $limitfrom, $perpage);
 
 // Get column configuration
 $columnsconfig = \local_extcsv\data_manager::parse_columns_config($source);
@@ -108,13 +110,15 @@ if ($total == 0) {
     }
 
     if (empty($fieldmapping)) {
-        // No mapping, show all fields
-        $table->head = ['ID', get_string('row', 'local_extcsv'), get_string('data', 'core')];
+        // No mapping, show limited info
+        $table->head = ['ID', get_string('row', 'local_extcsv'), get_string('info', 'core')];
         foreach ($data as $record) {
+            // Show only basic info to avoid memory issues
+            $info = "Source ID: {$record->sourceid}, Row: {$record->rownum}";
             $table->data[] = [
                 $record->id,
                 $record->rownum,
-                html_writer::div(print_r((array)$record, true), 'small'),
+                html_writer::div($info, 'small'),
             ];
         }
     } else {
@@ -123,7 +127,11 @@ if ($total == 0) {
             $row = [$record->id, $record->rownum];
             foreach ($fieldmapping as $fieldname) {
                 $value = $record->$fieldname ?? '';
-                if (is_numeric($value) && strlen($value) > 0) {
+                // Limit text length to avoid memory issues
+                if (is_string($value) && strlen($value) > 200) {
+                    $value = substr($value, 0, 200) . '...';
+                }
+                if (is_numeric($value) && strlen((string)$value) > 0) {
                     $row[] = $value;
                 } else if (empty($value)) {
                     $row[] = '-';

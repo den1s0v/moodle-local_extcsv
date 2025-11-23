@@ -59,12 +59,44 @@ class csv_importer {
 
         if ($errorno !== 0) {
             $error = $curl->error;
-            throw new moodle_exception('downloaderror', 'local_extcsv', '', $error);
+            if (is_array($error)) {
+                $error = implode(', ', $error);
+            }
+            // Ensure error is a string
+            $error = (string)$error;
+            if (empty($error)) {
+                $error = "CURL error #{$errorno}";
+            }
+            throw new moodle_exception('downloaderror', 'local_extcsv', null, $error);
         }
 
+        // Get HTTP code
         $httpcode = $curl->get_info(CURLINFO_HTTP_CODE);
-        if ($httpcode < 200 || $httpcode >= 300) {
-            throw new moodle_exception('downloadhttperror', 'local_extcsv', '', $httpcode);
+        
+        // Convert to integer, handling both scalar and array returns
+        $httpcodeint = 0;
+        if (is_numeric($httpcode)) {
+            $httpcodeint = (int)$httpcode;
+        } elseif (is_array($httpcode)) {
+            // Try different possible array keys
+            if (isset($httpcode[CURLINFO_HTTP_CODE])) {
+                $httpcodeint = (int)$httpcode[CURLINFO_HTTP_CODE];
+            } elseif (isset($httpcode['http_code'])) {
+                $httpcodeint = (int)$httpcode['http_code'];
+            } elseif (isset($httpcode['HTTP_CODE'])) {
+                $httpcodeint = (int)$httpcode['HTTP_CODE'];
+            }
+        }
+        
+        if ($httpcodeint === 0 || $httpcodeint < 200 || $httpcodeint >= 300) {
+            // Build error message - ensure it's always a string
+            if ($httpcodeint === 0) {
+                $errormsg = "Не удалось получить HTTP код ответа";
+            } else {
+                $errormsg = (string)$httpcodeint;
+            }
+            
+            throw new moodle_exception('downloadhttperror', 'local_extcsv', null, $errormsg);
         }
 
         if (empty($content)) {
