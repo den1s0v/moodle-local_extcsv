@@ -27,6 +27,7 @@ namespace local_extcsv;
 defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
+use local_extcsv\tools\pattern_tester;
 
 /**
  * Data manager class
@@ -95,9 +96,13 @@ class data_manager {
      * @return bool
      */
     protected static function match_pattern($columnname, $pattern) {
-        // Convert simple wildcard patterns to regex
-        $regex = str_replace(['*', '?'], ['.*', '.'], preg_quote($pattern, '/'));
-        return (bool)preg_match("/^{$regex}$/iu", $columnname);
+        try {
+            $tester = new pattern_tester($pattern);
+            return $tester->test($columnname);
+        } catch (\InvalidArgumentException $e) {
+            // Invalid pattern, return false
+            return false;
+        }
     }
 
     /**
