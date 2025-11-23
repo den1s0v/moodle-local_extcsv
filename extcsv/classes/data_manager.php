@@ -89,6 +89,24 @@ class data_manager {
     }
 
     /**
+     * Parse columns configuration from source
+     *
+     * @param source $source
+     * @return array|null Parsed columns configuration or null
+     */
+    public static function parse_columns_config($source) {
+        $columnsconfigraw = $source->get('columns_config');
+        if (empty($columnsconfigraw)) {
+            return null;
+        }
+        $columnsconfig = json_decode($columnsconfigraw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+        return $columnsconfig;
+    }
+
+    /**
      * Match CSV column name with pattern
      *
      * @param string $columnname
@@ -223,7 +241,7 @@ class data_manager {
         }
 
         $sourceid = $source->get('id');
-        $columnsconfig = $source->get_columns_config();
+        $columnsconfig = self::parse_columns_config($source);
 
         // First row is headers
         $headers = array_shift($csvrows);

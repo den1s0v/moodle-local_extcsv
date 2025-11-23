@@ -147,7 +147,7 @@ class source extends persistent {
      *
      * @return array|null
      */
-    public function get_columns_config() {
+    protected function get_columns_config() {
         $config = $this->get('columns_config');
         if (empty($config)) {
             return null;
@@ -164,7 +164,7 @@ class source extends persistent {
      *
      * @param array|null $config
      */
-    public function set_columns_config($config) {
+    protected function set_columns_config($config) {
         if ($config === null) {
             $this->set('columns_config', null);
         } else {

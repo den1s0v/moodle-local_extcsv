@@ -59,7 +59,7 @@ $total = data_manager::count_source_data($id);
 $data = data_manager::get_source_data($id, $page * $perpage, $perpage);
 
 // Get column configuration
-$columnsconfig = $source->get_columns_config();
+$columnsconfig = \local_extcsv\data_manager::parse_columns_config($source);
 
 // Output
 echo $OUTPUT->header();

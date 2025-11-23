@@ -57,7 +57,7 @@ class query_builder {
      * Build field name mapping from source configuration
      */
     protected function build_field_mapping() {
-        $columnsconfig = $this->source->get_columns_config();
+        $columnsconfig = data_manager::parse_columns_config($this->source);
         if (empty($columnsconfig) || !isset($columnsconfig['columns'])) {
             $this->fieldmapping = [];
             return;
