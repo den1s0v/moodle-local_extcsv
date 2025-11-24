@@ -93,7 +93,7 @@ class update_sources extends \core\task\scheduled_task {
 
         try {
             // We may need a lot of memory here.
-            core_php_time_limit::raise();
+            \core_php_time_limit::raise();
             raise_memory_limit(MEMORY_HUGE);
 
             // Create source object using model
