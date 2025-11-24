@@ -42,7 +42,7 @@ class source_manager {
      * Get all sources
      *
      * @param string|null $status Filter by status
-     * @return \stdClass[] Array of DB records (not persistent objects)
+     * @return \local_extcsv\model\source_model[]
      */
     public static function get_all_sources($status = null) {
         global $DB;
@@ -59,21 +59,31 @@ class source_manager {
             $where = 'WHERE ' . implode(' AND ', $conditions);
         }
 
-        return $DB->get_records_sql(
+        $records = $DB->get_records_sql(
             "SELECT * FROM {local_extcsv_sources} $where ORDER BY name",
             $params
         );
+
+        $sources = [];
+        foreach ($records as $record) {
+            $source = new \local_extcsv\model\source_model();
+            $source->from_record($record);
+            $sources[] = $source;
+        }
+
+        return $sources;
     }
 
     /**
      * Get source by ID
      *
      * @param int $id
-     * @return source|null
+     * @return \local_extcsv\model\source_model|null
      */
     public static function get_source($id) {
         try {
-            return new source($id);
+            $source = new \local_extcsv\model\source_model($id);
+            return $source->exists() ? $source : null;
         } catch (\dml_missing_record_exception $e) {
             return null;
         }
@@ -82,44 +92,36 @@ class source_manager {
     /**
      * Get enabled sources
      *
-     * @return source[]
+     * @return \local_extcsv\model\source_model[]
      */
     public static function get_enabled_sources() {
-        return self::get_all_sources(source::STATUS_ENABLED);
+        return self::get_all_sources(\local_extcsv\model\source_model::STATUS_ENABLED);
     }
 
     /**
      * Create new source
      *
      * @param \stdClass $data
-     * @return int Source ID
+     * @return \local_extcsv\model\source_model
      */
     public static function create_source($data) {
-        global $DB;
-        
         // Filter only allowed fields from form data
         $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
-        $record = new \stdClass();
+        $sourcedata = new \stdClass();
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
-                $record->$field = $data->$field;
+                $sourcedata->$field = $data->$field;
             }
         }
         
-        // Set default values
-        if (empty($record->status)) {
-            $record->status = source::STATUS_DISABLED;
+        // Create source using model
+        $source = new \local_extcsv\model\source_model();
+        foreach ((array)$sourcedata as $field => $value) {
+            $source->set($field, $value);
         }
-        if (empty($record->content_type)) {
-            $record->content_type = source::CONTENT_TYPE_CSV;
-        }
+        $source->save();
         
-        // Set timestamps
-        $record->timecreated = time();
-        $record->timemodified = time();
-        
-        // Insert directly to DB
-        return $DB->insert_record('local_extcsv_sources', $record);
+        return $source;
     }
 
     /**
@@ -127,31 +129,25 @@ class source_manager {
      *
      * @param int $id
      * @param \stdClass $data
-     * @return bool
+     * @return \local_extcsv\model\source_model
      * @throws moodle_exception
      */
     public static function update_source($id, $data) {
-        global $DB;
-        
-        // Check if source exists
-        if (!$DB->record_exists('local_extcsv_sources', ['id' => $id])) {
+        $source = self::get_source($id);
+        if (!$source) {
             throw new moodle_exception('sourcenotfound', 'local_extcsv');
         }
         
         // Filter only allowed fields from form data (exclude system fields and id)
         $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
-        $record = new \stdClass();
-        $record->id = $id;
-        $record->timemodified = time();
-        
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
-                $record->$field = $data->$field;
+                $source->set($field, $data->$field);
             }
         }
         
-        // Update directly in DB
-        return $DB->update_record('local_extcsv_sources', $record);
+        $source->save();
+        return $source;
     }
 
     /**
@@ -163,17 +159,16 @@ class source_manager {
     public static function delete_source($id) {
         global $DB;
 
-        // Check if source exists
-        if (!$DB->record_exists('local_extcsv_sources', ['id' => $id])) {
+        $source = self::get_source($id);
+        if (!$source) {
             return false;
         }
 
         // Delete associated data first
         $DB->delete_records('local_extcsv_data', ['sourceid' => $id]);
 
-        // Delete source directly from DB
-        $DB->delete_records('local_extcsv_sources', ['id' => $id]);
-        return true;
+        // Delete source using model
+        return $source->delete();
     }
 
     /**
@@ -210,29 +205,23 @@ class source_manager {
         // Load source directly from DB to avoid persistent memory issues
         $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
         
-        // Check if columns are configured - parse directly from DB record
-        $columnsconfig = null;
-        if (!empty($sourcerecord->columns_config)) {
-            $decoded = json_decode($sourcerecord->columns_config, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $columnsconfig = $decoded;
-            }
-        }
-        if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
-            throw new moodle_exception('columnsnotconfigured', 'local_extcsv');
-        }
-
         try {
             // We may need a lot of memory here.
             core_php_time_limit::raise();
             raise_memory_limit(MEMORY_HUGE);
 
-            // Create source object only when needed
-            $source = new source();
+            // Create source object using model
+            $source = new \local_extcsv\model\source_model();
             $source->from_record($sourcerecord);
+            
+            // Check if columns are configured
+            $columnsconfig = $source->getColumnsConfig();
+            if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
+                throw new moodle_exception('columnsnotconfigured', 'local_extcsv');
+            }
 
             // Mark as pending
-            $source->set_update_status(source::UPDATE_STATUS_PENDING);
+            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_PENDING);
 
             // Import data
             $rows = csv_importer::import_from_source($source);
@@ -241,7 +230,7 @@ class source_manager {
             $saved = data_manager::save_csv_data($source, $rows);
 
             // Mark as success
-            $source->set_update_status(source::UPDATE_STATUS_SUCCESS);
+            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_SUCCESS);
 
             return [
                 'success' => true,
@@ -252,7 +241,7 @@ class source_manager {
         } catch (\Exception $e) {
             // Mark as error
             $error = $e->getMessage();
-            $source->set_update_status(source::UPDATE_STATUS_ERROR, $error);
+            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_ERROR, $error);
 
             return [
                 'success' => false,

@@ -34,11 +34,13 @@ source_manager::require_manage_capability();
 // Get source ID
 $id = optional_param('id', 0, PARAM_INT);
 
-// Get or create source - load directly from DB to avoid persistent memory issues
+// Get or create source using source_manager
 $source = null;
 if ($id) {
-    global $DB;
-    $source = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
+    $source = source_manager::get_source($id);
+    if (!$source) {
+        throw new moodle_exception('sourcenotfound', 'local_extcsv');
+    }
 }
 
 // Page setup

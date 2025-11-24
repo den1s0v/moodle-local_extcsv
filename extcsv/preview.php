@@ -43,16 +43,17 @@ if (!$id) {
     throw new moodle_exception('missingparam', 'error', '', 'id');
 }
 
-// Load source directly from DB to avoid persistent memory issues
-global $DB;
-$sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
+// Load source using source_manager
+$source = source_manager::get_source($id);
+if (!$source) {
+    throw new moodle_exception('sourcenotfound', 'local_extcsv');
+}
 
 // Page setup
 $PAGE->set_context(context_system::instance());
 $PAGE->set_url(new moodle_url('/local/extcsv/preview.php', ['id' => $id]));
 $PAGE->set_title(get_string('preview', 'local_extcsv'));
-// Use DB record directly to avoid persistent get() calls
-$PAGE->set_heading(get_string('preview', 'local_extcsv') . ': ' . $sourcerecord->name);
+$PAGE->set_heading(get_string('preview', 'local_extcsv') . ': ' . $source->get('name'));
 $PAGE->set_pagelayout('admin');
 
 // Breadcrumb
@@ -64,9 +65,9 @@ $preview = null;
 $error = null;
 
 try {
-    // Use DB record directly to avoid persistent get() calls
-    $url = $sourcerecord->url;
-    $contenttype = $sourcerecord->content_type;
+    // Use source model methods
+    $url = $source->get('url');
+    $contenttype = $source->get('content_type');
     
     $processedurl = csv_importer::process_google_sheets_url($url, $contenttype);
     $content = csv_importer::download_content($processedurl);
@@ -76,7 +77,7 @@ try {
 }
 
 // Handle column mapping form submission
-$existingconfig = data_manager::parse_columns_config($sourcerecord);
+$existingconfig = $source->getColumnsConfig();
 $mappingform = null;
 $mappingsaved = false;
 
@@ -90,15 +91,9 @@ if (!$error && !empty($preview['headers'])) {
     }
     
     if ($data = $mappingform->get_processed_data()) {
-        // Save columns configuration - use direct DB update to avoid persistent memory issues
-        global $DB;
-        $configjson = json_encode($data, JSON_UNESCAPED_UNICODE);
-        
-        $updateobj = new \stdClass();
-        $updateobj->id = $id;
-        $updateobj->columns_config = $configjson;
-        $updateobj->timemodified = time();
-        $DB->update_record('local_extcsv_sources', $updateobj);
+        // Save columns configuration using source model
+        $source->setColumnsConfig($data);
+        $source->save();
         
         redirect(
             new moodle_url('/local/extcsv/preview.php', ['id' => $id]),

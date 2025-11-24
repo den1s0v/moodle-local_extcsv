@@ -220,7 +220,7 @@ class csv_importer {
     /**
      * Download and parse CSV/TSV from source
      *
-     * @param source $source
+     * @param \local_extcsv\model\source_model $source
      * @return array Array of rows
      * @throws moodle_exception
      */

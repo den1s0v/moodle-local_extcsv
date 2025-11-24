@@ -88,48 +88,11 @@ class data_manager {
         return "{$type}{$slot}";
     }
 
-    /**
-     * Get property value from persistent object using reflection to avoid memory issues
-     *
-     * @param object $object Persistent object
-     * @param string $property Property name
-     * @return mixed Property value or null
-     */
-    protected static function get_persistent_property($object, $property) {
-        try {
-            $reflection = new \ReflectionClass($object);
-            
-            // Try 'raw' property first (Moodle persistent API)
-            if ($reflection->hasProperty('raw')) {
-                $rawprop = $reflection->getProperty('raw');
-                $rawprop->setAccessible(true);
-                $raw = $rawprop->getValue($object);
-                if (isset($raw[$property])) {
-                    return $raw[$property];
-                }
-            }
-            
-            // Fallback to 'data' property
-            if ($reflection->hasProperty('data')) {
-                $dataprop = $reflection->getProperty('data');
-                $dataprop->setAccessible(true);
-                $data = $dataprop->getValue($object);
-                if (isset($data[$property])) {
-                    return $data[$property];
-                }
-            }
-            
-            // Last resort: use get() method
-            return $object->get($property);
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
 
     /**
      * Parse columns configuration from source, DB record, or JSON string
      *
-     * @param source|\stdClass|string|null $source Source object, DB record, or JSON string
+     * @param \local_extcsv\model\source_model|\stdClass|string|null $source Source object, DB record, or JSON string
      * @return array|null Parsed columns configuration or null
      */
     public static function parse_columns_config($source) {
@@ -147,9 +110,13 @@ class data_manager {
         else if ($source instanceof \stdClass) {
             $columnsconfigraw = $source->columns_config ?? null;
         }
-        // Otherwise, assume it's a persistent source object - use reflection to avoid get()
-        else {
-            $columnsconfigraw = self::get_persistent_property($source, 'columns_config');
+        // If it's a source model object, use getColumnsConfig method
+        else if (is_object($source) && method_exists($source, 'getColumnsConfig')) {
+            return $source->getColumnsConfig();
+        }
+        // Fallback: try to use get() method
+        else if (is_object($source) && method_exists($source, 'get')) {
+            $columnsconfigraw = $source->get('columns_config');
         }
         
         if (empty($columnsconfigraw)) {
@@ -362,7 +329,7 @@ class data_manager {
     /**
      * Save CSV rows to database
      *
-     * @param source $source
+     * @param \local_extcsv\model\source_model $source
      * @param array $csvrows Array of CSV rows (first row should be headers)
      * @return int Number of rows saved
      * @throws moodle_exception
@@ -374,13 +341,13 @@ class data_manager {
             return 0;
         }
 
-        // Get source ID using reflection to avoid get() calls
-        $sourceid = self::get_persistent_property($source, 'id');
+        // Get source ID
+        $sourceid = $source->getId();
         if ($sourceid === null) {
             throw new moodle_exception('invalidoperation', 'local_extcsv');
         }
         
-        // Get columns_config using parse_columns_config which handles reflection
+        // Get columns_config
         $columnsconfig = self::parse_columns_config($source);
 
         // First row is headers

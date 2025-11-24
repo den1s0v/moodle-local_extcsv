@@ -37,7 +37,7 @@ use moodle_exception;
  */
 class query_builder {
 
-    /** @var source Source instance */
+    /** @var \local_extcsv\model\source_model Source instance */
     protected $source;
 
     /** @var array Field name mapping: short_name => field_name */
@@ -46,7 +46,7 @@ class query_builder {
     /**
      * Constructor
      *
-     * @param source $source
+     * @param \local_extcsv\model\source_model $source
      */
     public function __construct($source) {
         $this->source = $source;
@@ -149,7 +149,7 @@ class query_builder {
 
         // Build WHERE clause
         $where = ['sourceid = :sourceid'];
-        $params = ['sourceid' => $this->source->get('id')];
+        $params = ['sourceid' => $this->source->getId()];
 
         foreach ($conditions as $field => $condition) {
             if (!isset($this->fieldmapping[$field])) {
@@ -206,11 +206,11 @@ class query_builder {
         if (stripos($replacedsql, 'sourceid') === false && stripos($replacedsql, 'WHERE') !== false) {
             // Add sourceid to WHERE clause
             $replacedsql = preg_replace('/WHERE/i', "WHERE sourceid = :sourceid AND ", $replacedsql);
-            $params['sourceid'] = $this->source->get('id');
+            $params['sourceid'] = $this->source->getId();
         } else if (stripos($replacedsql, 'sourceid') === false) {
             // Add WHERE clause
             $replacedsql .= ' WHERE sourceid = :sourceid';
-            $params['sourceid'] = $this->source->get('id');
+            $params['sourceid'] = $this->source->getId();
         }
 
         return $DB->get_records_sql($replacedsql, $params);

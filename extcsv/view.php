@@ -34,15 +34,17 @@ source_manager::require_manage_capability();
 
 // Get source ID
 $id = required_param('id', PARAM_INT);
-// Load source directly from DB to avoid persistent memory issues
-global $DB;
-$sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], 'id, name, columns_config', MUST_EXIST);
+// Load source using source_manager
+$source = source_manager::get_source($id);
+if (!$source) {
+    throw new moodle_exception('sourcenotfound', 'local_extcsv');
+}
 
 // Page setup
 $PAGE->set_context(context_system::instance());
 $PAGE->set_url(new moodle_url('/local/extcsv/view.php', ['id' => $id]));
 $PAGE->set_title(get_string('viewdata', 'local_extcsv'));
-$PAGE->set_heading(get_string('viewdata', 'local_extcsv') . ': ' . $sourcerecord->name);
+$PAGE->set_heading(get_string('viewdata', 'local_extcsv') . ': ' . $source->get('name'));
 $PAGE->set_pagelayout('admin');
 
 // Breadcrumb
@@ -53,14 +55,8 @@ $PAGE->navbar->add(get_string('viewdata', 'local_extcsv'));
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = 50;
 
-// Get column configuration first - parse directly from DB record
-$columnsconfig = null;
-if (!empty($sourcerecord->columns_config)) {
-    $decoded = json_decode($sourcerecord->columns_config, true);
-    if (json_last_error() === JSON_ERROR_NONE) {
-        $columnsconfig = $decoded;
-    }
-}
+// Get column configuration using source model
+$columnsconfig = $source->getColumnsConfig();
 
 // Build list of fields to select and headers based on column mapping
 $fields = ['id', 'sourceid', 'rownum'];
