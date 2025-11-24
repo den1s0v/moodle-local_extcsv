@@ -33,69 +33,69 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="sourceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Reference to local_extcsv_sources.id"/>
         <FIELD NAME="rownum" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Row number from CSV source"/>
-        <FIELD NAME="text1" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text2" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text3" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text4" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text5" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text6" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text7" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text8" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text9" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text10" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text11" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text12" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text13" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text14" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text15" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text16" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text17" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text18" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text19" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="text20" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int1" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int2" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int3" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int4" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int5" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int6" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int7" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int8" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int9" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int10" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int11" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int12" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int13" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int14" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int15" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int16" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int17" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int18" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int19" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="int20" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float1" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float2" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float3" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float4" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="float5" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="bool1" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="bool2" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="bool3" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="bool4" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="bool5" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date1" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date2" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date3" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date4" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date5" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date6" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date7" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date8" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date9" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="date10" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="json1" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="json2" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="json3" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_1" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_2" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_3" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_4" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_5" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_6" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_7" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_8" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_9" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_10" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_11" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_12" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_13" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_14" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_15" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_16" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_17" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_18" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_19" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text_20" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_1" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_2" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_3" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_4" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_5" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_6" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_7" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_8" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_9" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_10" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_11" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_12" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_13" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_14" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_15" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_16" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_17" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_18" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_19" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="int_20" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float_1" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float_2" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float_3" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float_4" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="float_5" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="bool_1" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="bool_2" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="bool_3" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="bool_4" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="bool_5" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_1" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_2" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_3" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_4" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_5" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_6" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_7" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_8" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_9" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="date_10" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="json_1" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="json_2" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="json_3" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>

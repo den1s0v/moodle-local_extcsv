@@ -86,7 +86,7 @@ class data_manager {
             return null;
         }
 
-        return "{$type}{$slot}";
+        return "{$type}_{$slot}";
     }
 
 
