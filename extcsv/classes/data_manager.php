@@ -417,6 +417,18 @@ class data_manager {
      */
     public static function get_source_data($sourceid, $limitfrom = 0, $limitnum = 0, $fields = '*') {
         global $DB;
+        
+        // Escape field names with backticks to avoid SQL syntax errors
+        if ($fields !== '*') {
+            $fieldlist = explode(',', $fields);
+            $fieldlist = array_map('trim', $fieldlist);
+            $fieldlist = array_map(function($field) {
+                // Escape field name with backticks
+                return '`' . str_replace('`', '``', $field) . '`';
+            }, $fieldlist);
+            $fields = implode(',', $fieldlist);
+        }
+        
         return $DB->get_records_select(
             'local_extcsv_data',
             'sourceid = :sourceid',

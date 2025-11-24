@@ -105,9 +105,11 @@ class query_builder {
 
         $replaced = $sql;
         foreach ($this->fieldmapping as $shortname => $fieldname) {
-            // Replace {{short_name}} with actual field name
+            // Replace {{short_name}} with actual field name (escaped)
             $pattern = '/\{\{' . preg_quote($shortname, '/') . '\}\}/';
-            $replaced = preg_replace($pattern, $fieldname, $replaced);
+            // Escape field name with backticks
+            $escapedfield = '`' . str_replace('`', '``', $fieldname) . '`';
+            $replaced = preg_replace($pattern, $escapedfield, $replaced);
         }
 
         // Check if there are any unmatched placeholders
@@ -145,11 +147,16 @@ class query_builder {
             }
         }
 
+        // Escape field names with backticks to avoid SQL syntax errors
+        $escapedfields = array_map(function($field) {
+            return '`' . str_replace('`', '``', $field) . '`';
+        }, $selectfields);
+        
         // Build SELECT clause
-        $select = 'SELECT id, sourceid, rownum, ' . implode(', ', $selectfields) . ' FROM {local_extcsv_data}';
+        $select = 'SELECT `id`, `sourceid`, `rownum`, ' . implode(', ', $escapedfields) . ' FROM {local_extcsv_data}';
 
         // Build WHERE clause
-        $where = ['sourceid = :sourceid'];
+        $where = ['`sourceid` = :sourceid'];
         $params = ['sourceid' => $this->source->getId()];
 
         foreach ($conditions as $field => $condition) {
@@ -162,11 +169,13 @@ class query_builder {
                 $operator = $condition['operator'] ?? '=';
                 $value = $condition['value'];
                 $paramname = 'param' . count($params);
-                $where[] = "{$dbfield} {$operator} :{$paramname}";
+                $escapedfield = '`' . str_replace('`', '``', $dbfield) . '`';
+                $where[] = "{$escapedfield} {$operator} :{$paramname}";
                 $params[$paramname] = $value;
             } else {
                 $paramname = 'param' . count($params);
-                $where[] = "{$dbfield} = :{$paramname}";
+                $escapedfield = '`' . str_replace('`', '``', $dbfield) . '`';
+                $where[] = "{$escapedfield} = :{$paramname}";
                 $params[$paramname] = $condition;
             }
         }
@@ -179,7 +188,8 @@ class query_builder {
                 throw new moodle_exception('unknownfield', 'local_extcsv', '', $orderby);
             }
             $dbfield = $this->fieldmapping[$orderby];
-            $sql .= ' ORDER BY ' . $dbfield . ' ' . $orderdir;
+            $escapedfield = '`' . str_replace('`', '``', $dbfield) . '`';
+            $sql .= ' ORDER BY ' . $escapedfield . ' ' . $orderdir;
         }
 
         // Add LIMIT
@@ -205,12 +215,12 @@ class query_builder {
 
         // Add sourceid condition if not present
         if (stripos($replacedsql, 'sourceid') === false && stripos($replacedsql, 'WHERE') !== false) {
-            // Add sourceid to WHERE clause
-            $replacedsql = preg_replace('/WHERE/i', "WHERE sourceid = :sourceid AND ", $replacedsql);
+            // Add sourceid to WHERE clause (escaped)
+            $replacedsql = preg_replace('/WHERE/i', "WHERE `sourceid` = :sourceid AND ", $replacedsql);
             $params['sourceid'] = $this->source->getId();
         } else if (stripos($replacedsql, 'sourceid') === false) {
-            // Add WHERE clause
-            $replacedsql .= ' WHERE sourceid = :sourceid';
+            // Add WHERE clause (escaped)
+            $replacedsql .= ' WHERE `sourceid` = :sourceid';
             $params['sourceid'] = $this->source->getId();
         }
 
