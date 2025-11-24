@@ -92,6 +92,9 @@ $limitfrom = $page * $perpage;
 $fieldslist = implode(',', $fields);
 $data = data_manager::get_source_data($id, $limitfrom, $perpage, $fieldslist);
 
+// Check if columns are configured
+$hascolumnsconfig = !empty($columnsconfig) && !empty($columnsconfig['columns']);
+
 // Output
 echo $OUTPUT->header();
 
@@ -106,6 +109,21 @@ if ($action === 'update' && confirm_sesskey()) {
     }
 }
 
+// Show warning if columns not configured
+if (!$hascolumnsconfig) {
+    echo html_writer::div(
+        html_writer::div(
+            get_string('nocolumnsmapping', 'local_extcsv'),
+            'alert alert-warning mb-3'
+        ) . html_writer::link(
+            new moodle_url('/local/extcsv/preview.php', ['id' => $id]),
+            get_string('configurecolumnsfirst', 'local_extcsv'),
+            ['class' => 'btn btn-warning']
+        ),
+        'mb-3'
+    );
+}
+
 echo html_writer::div(
     html_writer::link(
         new moodle_url('/local/extcsv/index.php'),
@@ -118,10 +136,15 @@ echo html_writer::div(
         ['class' => 'btn btn-primary']
     ) . ' ' .
     html_writer::link(
+        new moodle_url('/local/extcsv/preview.php', ['id' => $id]),
+        get_string('configurecolumnsfirst', 'local_extcsv'),
+        ['class' => 'btn btn-info']
+    ) . ' ' .
+    ($hascolumnsconfig ? html_writer::link(
         new moodle_url($PAGE->url, ['action' => 'update', 'sesskey' => sesskey()]),
         get_string('updatenow', 'local_extcsv'),
         ['class' => 'btn btn-success']
-    ),
+    ) : ''),
     'mb-3'
 );
 

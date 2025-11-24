@@ -222,7 +222,17 @@ class source_manager {
             throw new moodle_exception('sourcenotfound', 'local_extcsv');
         }
 
+        // Check if columns are configured
+        $columnsconfig = data_manager::parse_columns_config($source);
+        if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
+            throw new moodle_exception('columnsnotconfigured', 'local_extcsv');
+        }
+
         try {
+            // We may need a lot of memory here.
+            core_php_time_limit::raise();
+            raise_memory_limit(MEMORY_HUGE);
+
             // Mark as pending
             $source->set_update_status(source::UPDATE_STATUS_PENDING);
 

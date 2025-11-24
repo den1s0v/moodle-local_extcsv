@@ -77,7 +77,20 @@ class update_sources extends \core\task\scheduled_task {
             return;
         }
 
+        // Check if columns are configured
+        $columnsconfig = data_manager::parse_columns_config($source);
+        if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
+            $error = get_string('columnsnotconfigured', 'local_extcsv');
+            $source->set_update_status(source::UPDATE_STATUS_ERROR, $error);
+            mtrace("Error updating source '{$source->get('name')}': {$error}");
+            return;
+        }
+
         try {
+            // We may need a lot of memory here.
+            core_php_time_limit::raise();
+            raise_memory_limit(MEMORY_HUGE);
+
             // Mark as pending
             $source->set_update_status(source::UPDATE_STATUS_PENDING);
 

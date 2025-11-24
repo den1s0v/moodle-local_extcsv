@@ -124,6 +124,82 @@ class data_manager {
     }
 
     /**
+     * Automatically assign slots to selected columns
+     *
+     * @param array $selectedcolumns Array of ['column_name' => string, 'type' => string, 'short_name' => string]
+     * @return array Columns configuration with assigned slots
+     * @throws moodle_exception If field limits are exceeded
+     */
+    public static function assign_slots_automatically($selectedcolumns) {
+        $maxslots = [
+            self::TYPE_TEXT => self::MAX_TEXT,
+            self::TYPE_INT => self::MAX_INT,
+            self::TYPE_FLOAT => self::MAX_FLOAT,
+            self::TYPE_BOOL => self::MAX_BOOL,
+            self::TYPE_DATE => self::MAX_DATE,
+            self::TYPE_JSON => self::MAX_JSON,
+        ];
+
+        // Count columns by type
+        $typecounts = [
+            self::TYPE_TEXT => 0,
+            self::TYPE_INT => 0,
+            self::TYPE_FLOAT => 0,
+            self::TYPE_BOOL => 0,
+            self::TYPE_DATE => 0,
+            self::TYPE_JSON => 0,
+        ];
+
+        foreach ($selectedcolumns as $col) {
+            $type = $col['type'] ?? self::TYPE_TEXT;
+            if (isset($typecounts[$type])) {
+                $typecounts[$type]++;
+            }
+        }
+
+        // Validate limits
+        foreach ($typecounts as $type => $count) {
+            if ($count > $maxslots[$type]) {
+                $a = (object)[
+                    'type' => $type,
+                    'max' => $maxslots[$type],
+                    'selected' => $count
+                ];
+                throw new moodle_exception('fieldlimitreached', 'local_extcsv', null, $a);
+            }
+        }
+
+        // Assign slots
+        $slotcounters = [
+            self::TYPE_TEXT => 0,
+            self::TYPE_INT => 0,
+            self::TYPE_FLOAT => 0,
+            self::TYPE_BOOL => 0,
+            self::TYPE_DATE => 0,
+            self::TYPE_JSON => 0,
+        ];
+
+        $columnsconfig = [];
+        foreach ($selectedcolumns as $col) {
+            $type = $col['type'] ?? self::TYPE_TEXT;
+            $shortname = $col['short_name'] ?? $col['column_name'] ?? '';
+            $pattern = $col['pattern'] ?? $col['column_name'] ?? '';
+
+            $slotcounters[$type]++;
+            $slot = $slotcounters[$type];
+
+            $columnsconfig[] = [
+                'pattern' => $pattern,
+                'type' => $type,
+                'slot' => $slot,
+                'short_name' => $shortname,
+            ];
+        }
+
+        return ['columns' => $columnsconfig];
+    }
+
+    /**
      * Build column mapping from CSV headers and source configuration
      *
      * @param array $csvheaders CSV header row

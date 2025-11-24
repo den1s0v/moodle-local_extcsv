@@ -27,6 +27,8 @@ require_once($CFG->libdir . '/adminlib.php');
 
 use local_extcsv\source_manager;
 use local_extcsv\csv_importer;
+use local_extcsv\data_manager;
+use local_extcsv\form\column_mapping_form;
 
 // Check permissions
 source_manager::require_manage_capability();
@@ -61,6 +63,35 @@ try {
     $preview = csv_importer::get_preview($content, $source->get('content_type'));
 } catch (\Exception $e) {
     $error = $e->getMessage();
+}
+
+// Handle column mapping form submission
+$existingconfig = data_manager::parse_columns_config($source);
+$mappingform = null;
+$mappingsaved = false;
+
+if (!$error && !empty($preview['headers'])) {
+    $formdata = ['headers' => $preview['headers'], 'existing_config' => $existingconfig];
+    $mappingform = new column_mapping_form(null, $formdata);
+    $mappingform->set_data(['sourceid' => $id]);
+    
+    if ($mappingform->is_cancelled()) {
+        redirect(new moodle_url('/local/extcsv/index.php'));
+    }
+    
+    if ($data = $mappingform->get_processed_data()) {
+        // Save columns configuration
+        $source->set('columns_config', json_encode($data));
+        $source->save();
+        $mappingsaved = true;
+        
+        redirect(
+            new moodle_url('/local/extcsv/preview.php', ['id' => $id]),
+            get_string('mappingsaved', 'local_extcsv'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    }
 }
 
 // Output
@@ -110,6 +141,12 @@ if ($error) {
         echo html_writer::table($table);
     }
 
+    // Show column mapping form
+    if ($mappingform) {
+        echo html_writer::tag('h3', get_string('mapcolumns', 'local_extcsv'));
+        $mappingform->display();
+    }
+    
     echo html_writer::div(
         html_writer::link(
             new moodle_url('/local/extcsv/edit.php', ['id' => $id]),

@@ -106,6 +106,10 @@ $table->attributes['class'] = 'generaltable';
 foreach ($sources as $source) {
     $sourceid = $source->get('id');
     $rowcount = data_manager::count_source_data($sourceid);
+    
+    // Check if columns are configured
+    $columnsconfig = data_manager::parse_columns_config($source);
+    $hascolumnsconfig = !empty($columnsconfig) && !empty($columnsconfig['columns']);
 
     $status = $source->get('status');
     $statusclass = '';
@@ -131,6 +135,14 @@ foreach ($sources as $source) {
         $statusbadge = html_writer::span(
             get_string("status_{$lastupdatestatus}", 'local_extcsv'),
             "badge {$badgeclass}"
+        );
+    }
+    
+    // Add warning badge if columns not configured
+    if (!$hascolumnsconfig) {
+        $statusbadge .= ' ' . html_writer::span(
+            get_string('configurecolumnsfirst', 'local_extcsv'),
+            'badge badge-warning'
         );
     }
 
