@@ -53,10 +53,17 @@ class update_sources extends \core\task\scheduled_task {
      * Execute the task
      */
     public function execute() {
-        $enabledsources = source_manager::get_enabled_sources();
-
-        foreach ($enabledsources as $source) {
+        global $DB;
+        
+        // Load sources directly from DB to avoid persistent memory issues
+        $sourcerecords = $DB->get_records('local_extcsv_sources', ['status' => source::STATUS_ENABLED], 'name');
+        
+        foreach ($sourcerecords as $sourcerecord) {
+            $source = new source();
+            $source->from_record($sourcerecord);
             $this->update_source($source);
+            // Unset to free memory
+            unset($source);
         }
     }
 

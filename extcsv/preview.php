@@ -35,9 +35,12 @@ source_manager::require_manage_capability();
 
 // Get source ID
 $id = required_param('id', PARAM_INT);
-// Load source directly to avoid potential memory issues
+
+// Load source directly from DB to avoid persistent memory issues
 global $DB;
 $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
+
+// Create source object only when needed (for saving)
 $source = new \local_extcsv\source();
 $source->from_record($sourcerecord);
 
@@ -45,7 +48,8 @@ $source->from_record($sourcerecord);
 $PAGE->set_context(context_system::instance());
 $PAGE->set_url(new moodle_url('/local/extcsv/preview.php', ['id' => $id]));
 $PAGE->set_title(get_string('preview', 'local_extcsv'));
-$PAGE->set_heading(get_string('preview', 'local_extcsv') . ': ' . $source->get('name'));
+// Use DB record directly to avoid persistent get() calls
+$PAGE->set_heading(get_string('preview', 'local_extcsv') . ': ' . $sourcerecord->name);
 $PAGE->set_pagelayout('admin');
 
 // Breadcrumb
@@ -57,16 +61,27 @@ $preview = null;
 $error = null;
 
 try {
-    $content = csv_importer::download_content(
-        csv_importer::process_google_sheets_url($source->get('url'), $source->get('content_type'))
-    );
-    $preview = csv_importer::get_preview($content, $source->get('content_type'));
+    // Use DB record directly to avoid persistent get() calls
+    $url = $sourcerecord->url;
+    $contenttype = $sourcerecord->content_type;
+    
+    $processedurl = csv_importer::process_google_sheets_url($url, $contenttype);
+    $content = csv_importer::download_content($processedurl);
+    $preview = csv_importer::get_preview($content, $contenttype);
 } catch (\Exception $e) {
     $error = $e->getMessage();
 }
 
 // Handle column mapping form submission
-$existingconfig = data_manager::parse_columns_config($source);
+// Parse directly from DB record instead of using persistent object
+$existingconfig = null;
+if (!empty($sourcerecord->columns_config)) {
+    $decoded = json_decode($sourcerecord->columns_config, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+        $existingconfig = $decoded;
+    }
+}
+
 $mappingform = null;
 $mappingsaved = false;
 
@@ -81,7 +96,8 @@ if (!$error && !empty($preview['headers'])) {
     
     if ($data = $mappingform->get_processed_data()) {
         // Save columns configuration
-        $source->set('columns_config', json_encode($data));
+        $configjson = json_encode($data);
+        $source->set('columns_config', $configjson);
         $source->save();
         $mappingsaved = true;
         

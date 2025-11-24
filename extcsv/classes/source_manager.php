@@ -217,13 +217,19 @@ class source_manager {
      * @throws moodle_exception
      */
     public static function update_source_manual($id) {
-        $source = self::get_source($id);
-        if (!$source) {
-            throw new moodle_exception('sourcenotfound', 'local_extcsv');
+        global $DB;
+        
+        // Load source directly from DB to avoid persistent memory issues
+        $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
+        
+        // Check if columns are configured - parse directly from DB record
+        $columnsconfig = null;
+        if (!empty($sourcerecord->columns_config)) {
+            $decoded = json_decode($sourcerecord->columns_config, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $columnsconfig = $decoded;
+            }
         }
-
-        // Check if columns are configured
-        $columnsconfig = data_manager::parse_columns_config($source);
         if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
             throw new moodle_exception('columnsnotconfigured', 'local_extcsv');
         }
@@ -232,6 +238,10 @@ class source_manager {
             // We may need a lot of memory here.
             core_php_time_limit::raise();
             raise_memory_limit(MEMORY_HUGE);
+
+            // Create source object only when needed
+            $source = new source();
+            $source->from_record($sourcerecord);
 
             // Mark as pending
             $source->set_update_status(source::UPDATE_STATUS_PENDING);

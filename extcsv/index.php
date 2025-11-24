@@ -52,11 +52,13 @@ if ($action === 'delete' && $id) {
             redirect($PAGE->url, get_string('sourcenotfound', 'local_extcsv'), null, \core\output\notification::NOTIFY_ERROR);
         }
     } else {
-        $source = source_manager::get_source($id);
-        if ($source) {
+        // Load source directly from DB to avoid persistent memory issues
+        global $DB;
+        $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], 'id, name');
+        if ($sourcerecord) {
             echo $OUTPUT->header();
             echo $OUTPUT->confirm(
-                get_string('confirmdelete', 'local_extcsv', $source->get('name')),
+                get_string('confirmdelete', 'local_extcsv', $sourcerecord->name),
                 new moodle_url($PAGE->url, ['action' => 'delete', 'id' => $id, 'confirm' => 1]),
                 $PAGE->url
             );
@@ -75,8 +77,9 @@ if ($action === 'update' && $id && confirm_sesskey()) {
     }
 }
 
-// Get all sources
-$sources = source_manager::get_all_sources();
+// Get all sources directly from DB to avoid persistent memory issues
+global $DB;
+$sourcerecords = $DB->get_records('local_extcsv_sources', null, 'name', 'id, name, status, content_type, lastupdate, lastupdatestatus, columns_config');
 
 // Output
 echo $OUTPUT->header();
@@ -103,15 +106,20 @@ $table->head = [
 ];
 $table->attributes['class'] = 'generaltable';
 
-foreach ($sources as $source) {
-    $sourceid = $source->get('id');
+foreach ($sourcerecords as $sourcerecord) {
+    $sourceid = $sourcerecord->id;
     $rowcount = data_manager::count_source_data($sourceid);
     
-    // Check if columns are configured
-    $columnsconfig = data_manager::parse_columns_config($source);
-    $hascolumnsconfig = !empty($columnsconfig) && !empty($columnsconfig['columns']);
+    // Check if columns are configured - parse directly from DB record
+    $hascolumnsconfig = false;
+    if (!empty($sourcerecord->columns_config)) {
+        $columnsconfig = json_decode($sourcerecord->columns_config, true);
+        if (json_last_error() === JSON_ERROR_NONE && !empty($columnsconfig['columns'])) {
+            $hascolumnsconfig = true;
+        }
+    }
 
-    $status = $source->get('status');
+    $status = $sourcerecord->status;
     $statusclass = '';
     switch ($status) {
         case \local_extcsv\source::STATUS_ENABLED:
@@ -125,10 +133,10 @@ foreach ($sources as $source) {
             break;
     }
 
-    $lastupdate = $source->get('lastupdate');
+    $lastupdate = $sourcerecord->lastupdate;
     $lastupdatestr = $lastupdate ? userdate($lastupdate) : '-';
 
-    $lastupdatestatus = $source->get('lastupdatestatus');
+    $lastupdatestatus = $sourcerecord->lastupdatestatus;
     $statusbadge = '';
     if ($lastupdatestatus) {
         $badgeclass = $lastupdatestatus === \local_extcsv\source::UPDATE_STATUS_SUCCESS ? 'badge-success' : 'badge-danger';
@@ -176,10 +184,10 @@ foreach ($sources as $source) {
     $table->data[] = [
         html_writer::link(
             new moodle_url('/local/extcsv/edit.php', ['id' => $sourceid]),
-            $source->get('name')
+            $sourcerecord->name
         ) . ' (' . $rowcount . ' ' . get_string('rows', 'local_extcsv') . ')',
         html_writer::span(get_string("status_{$status}", 'local_extcsv'), $statusclass),
-        get_string("content_type_{$source->get('content_type')}", 'local_extcsv'),
+        get_string("content_type_{$sourcerecord->content_type}", 'local_extcsv'),
         $lastupdatestr,
         $statusbadge,
         implode(' ', $actions),
