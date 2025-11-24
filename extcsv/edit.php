@@ -38,9 +38,7 @@ $id = optional_param('id', 0, PARAM_INT);
 $source = null;
 if ($id) {
     global $DB;
-    $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
-    $source = new \local_extcsv\source();
-    $source->from_record($sourcerecord);
+    $source = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
 }
 
 // Page setup

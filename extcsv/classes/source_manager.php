@@ -42,7 +42,7 @@ class source_manager {
      * Get all sources
      *
      * @param string|null $status Filter by status
-     * @return source[]
+     * @return \stdClass[] Array of DB records (not persistent objects)
      */
     public static function get_all_sources($status = null) {
         global $DB;
@@ -59,18 +59,10 @@ class source_manager {
             $where = 'WHERE ' . implode(' AND ', $conditions);
         }
 
-        $records = $DB->get_records_sql(
+        return $DB->get_records_sql(
             "SELECT * FROM {local_extcsv_sources} $where ORDER BY name",
             $params
         );
-
-        $sources = [];
-        foreach ($records as $record) {
-            $source = new source();
-            $source->from_record($record);
-            $sources[] = $source;
-        }
-        return $sources;
     }
 
     /**
@@ -100,26 +92,34 @@ class source_manager {
      * Create new source
      *
      * @param \stdClass $data
-     * @return source
+     * @return int Source ID
      */
     public static function create_source($data) {
+        global $DB;
+        
         // Filter only allowed fields from form data
         $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
-        $sourcedata = new \stdClass();
+        $record = new \stdClass();
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
-                $sourcedata->$field = $data->$field;
+                $record->$field = $data->$field;
             }
         }
-        // Create source without passing data directly to constructor to avoid validation issues
-        $source = new source();
-        foreach ($allowedfields as $field) {
-            if (isset($sourcedata->$field)) {
-                $source->set($field, $sourcedata->$field);
-            }
+        
+        // Set default values
+        if (empty($record->status)) {
+            $record->status = source::STATUS_DISABLED;
         }
-        $source->save();
-        return $source;
+        if (empty($record->content_type)) {
+            $record->content_type = source::CONTENT_TYPE_CSV;
+        }
+        
+        // Set timestamps
+        $record->timecreated = time();
+        $record->timemodified = time();
+        
+        // Insert directly to DB
+        return $DB->insert_record('local_extcsv_sources', $record);
     }
 
     /**
@@ -127,43 +127,31 @@ class source_manager {
      *
      * @param int $id
      * @param \stdClass $data
-     * @return source
+     * @return bool
      * @throws moodle_exception
      */
     public static function update_source($id, $data) {
-        $source = self::get_source($id);
-        if (!$source) {
+        global $DB;
+        
+        // Check if source exists
+        if (!$DB->record_exists('local_extcsv_sources', ['id' => $id])) {
             throw new moodle_exception('sourcenotfound', 'local_extcsv');
         }
-        // Ensure we're updating an existing record (check ID)
-        $sourceid = $source->get('id');
-        if (empty($sourceid) || $sourceid != $id) {
-            throw new moodle_exception('sourcenotfound', 'local_extcsv');
-        }
+        
         // Filter only allowed fields from form data (exclude system fields and id)
         $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
-        // Explicitly exclude id from being set
-        if (isset($data->id)) {
-            unset($data->id);
-        }
+        $record = new \stdClass();
+        $record->id = $id;
+        $record->timemodified = time();
+        
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
-                try {
-                    $source->set($field, $data->$field);
-                } catch (\coding_exception $e) {
-                    // Property doesn't exist or invalid value, skip it
-                    continue;
-                }
+                $record->$field = $data->$field;
             }
         }
-        // Double-check that ID is still set before saving
-        $finalid = $source->get('id');
-        if (empty($finalid) || $finalid != $id) {
-            throw new moodle_exception('sourcenotfound', 'local_extcsv');
-        }
-        // save() will update existing record if ID is set and object was loaded from DB
-        $source->save();
-        return $source;
+        
+        // Update directly in DB
+        return $DB->update_record('local_extcsv_sources', $record);
     }
 
     /**
@@ -175,16 +163,16 @@ class source_manager {
     public static function delete_source($id) {
         global $DB;
 
-        $source = self::get_source($id);
-        if (!$source) {
+        // Check if source exists
+        if (!$DB->record_exists('local_extcsv_sources', ['id' => $id])) {
             return false;
         }
 
         // Delete associated data first
         $DB->delete_records('local_extcsv_data', ['sourceid' => $id]);
 
-        // Delete source
-        $source->delete();
+        // Delete source directly from DB
+        $DB->delete_records('local_extcsv_sources', ['id' => $id]);
         return true;
     }
 

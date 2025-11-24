@@ -47,9 +47,30 @@ class source_form extends moodleform {
         $source = $this->_customdata['source'] ?? null;
 
         // Hidden field for ID (if editing)
-        if ($source && $source->get('id')) {
-            $mform->addElement('hidden', 'id', $source->get('id'));
-            $mform->setType('id', PARAM_INT);
+        if ($source) {
+            $sourceid = null;
+            if ($source instanceof \stdClass) {
+                $sourceid = $source->id ?? null;
+            } else {
+                // Try to get ID via reflection
+                try {
+                    $reflection = new \ReflectionClass($source);
+                    if ($reflection->hasProperty('raw')) {
+                        $rawprop = $reflection->getProperty('raw');
+                        $rawprop->setAccessible(true);
+                        $raw = $rawprop->getValue($source);
+                        $sourceid = $raw['id'] ?? null;
+                    }
+                } catch (\Exception $e) {
+                    // Fallback to get()
+                    $sourceid = $source->get('id');
+                }
+            }
+            
+            if ($sourceid) {
+                $mform->addElement('hidden', 'id', $sourceid);
+                $mform->setType('id', PARAM_INT);
+            }
         }
 
         // Name
@@ -113,13 +134,40 @@ class source_form extends moodleform {
 
         // Set defaults if editing
         if ($source) {
-            $mform->setDefault('name', $source->get('name'));
-            $mform->setDefault('description', $source->get('description'));
-            $mform->setDefault('status', $source->get('status'));
-            $mform->setDefault('url', $source->get('url'));
-            $mform->setDefault('content_type', $source->get('content_type'));
-
-            $schedule = $source->get('schedule');
+            // Get data directly from source record properties to avoid persistent get() calls
+            $sourcerecord = null;
+            if ($source instanceof \stdClass) {
+                $sourcerecord = $source;
+            } else {
+                // Try to get raw data via reflection
+                try {
+                    $reflection = new \ReflectionClass($source);
+                    if ($reflection->hasProperty('raw')) {
+                        $rawprop = $reflection->getProperty('raw');
+                        $rawprop->setAccessible(true);
+                        $sourcerecord = (object)$rawprop->getValue($source);
+                    }
+                } catch (\Exception $e) {
+                    // Fallback to get() if reflection fails
+                }
+            }
+            
+            if ($sourcerecord) {
+                $mform->setDefault('name', $sourcerecord->name ?? '');
+                $mform->setDefault('description', $sourcerecord->description ?? '');
+                $mform->setDefault('status', $sourcerecord->status ?? '');
+                $mform->setDefault('url', $sourcerecord->url ?? '');
+                $mform->setDefault('content_type', $sourcerecord->content_type ?? '');
+                $schedule = $sourcerecord->schedule ?? null;
+            } else {
+                // Fallback to get() method
+                $mform->setDefault('name', $source->get('name'));
+                $mform->setDefault('description', $source->get('description'));
+                $mform->setDefault('status', $source->get('status'));
+                $mform->setDefault('url', $source->get('url'));
+                $mform->setDefault('content_type', $source->get('content_type'));
+                $schedule = $source->get('schedule');
+            }
             if ($schedule) {
                 // Try to detect if it's a cron expression
                 if (preg_match('/^\s*(\d+)\s+(minute|hour|day)s?\s*$/i', $schedule, $matches)) {
