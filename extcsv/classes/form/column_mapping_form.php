@@ -95,14 +95,19 @@ class column_mapping_form extends moodleform {
             \local_extcsv\data_manager::TYPE_JSON => get_string('type_json', 'local_extcsv'),
         ];
         
-        // Add columns mapping fields - create HTML table structure
-        $mform->addElement('html', '<table class="generaltable table-bordered"><thead><tr>');
-        $mform->addElement('html', '<th>' . get_string('select', 'core') . '</th>');
+        // Wrap table in a div for better control
+        $mform->addElement('html', '<div class="column-mapping-table-wrapper">');
+        
+        // Create table header with column number
+        $mform->addElement('html', '<table class="generaltable"><thead><tr>');
+        $mform->addElement('html', '<th>' . get_string('column_number', 'local_extcsv') . '</th>');
         $mform->addElement('html', '<th>' . get_string('column_name', 'local_extcsv') . '</th>');
+        $mform->addElement('html', '<th>' . get_string('select', 'core') . '</th>');
         $mform->addElement('html', '<th>' . get_string('columntype', 'local_extcsv') . '</th>');
         $mform->addElement('html', '<th>' . get_string('shortname', 'local_extcsv') . '</th>');
         $mform->addElement('html', '</tr></thead><tbody>');
         
+        // Create form elements for each column
         foreach ($headers as $index => $headername) {
             // Hidden field for column name
             $mform->addElement('hidden', "column_name_{$index}", $headername);
@@ -112,38 +117,125 @@ class column_mapping_form extends moodleform {
             $existingshortname = $existingmap[$headername]['short_name'] ?? '';
             $ischecked = isset($existingmap[$headername]) ? 1 : 0;
             
-            // Row start
-            $mform->addElement('html', '<tr id="row_' . $index . '">');
+            $checkboxid = "selected_{$index}";
+            $typeid = "column_type_{$index}";
+            $nameid = "short_name_{$index}";
             
-            // Checkbox
-            $mform->addElement('html', '<td>');
-            $mform->addElement('checkbox', "selected_{$index}", '');
-            $mform->setDefault("selected_{$index}", $ischecked);
-            $mform->addElement('html', '</td>');
+            // Start row
+            $mform->addElement('html', '<tr>');
             
-            // Column name
+            // Column number cell
+            $mform->addElement('html', '<td style="text-align: center;">' . ($index + 1) . '</td>');
+            
+            // Column name cell
             $mform->addElement('html', '<td>' . htmlspecialchars($headername) . '</td>');
             
-            // Column type
-            $mform->addElement('html', '<td>');
-            $mform->addElement('select', "column_type_{$index}", '', $typeoptions);
-            $mform->setDefault("column_type_{$index}", $existingtype);
-            $mform->disabledIf("column_type_{$index}", "selected_{$index}", 'notchecked');
+            // Checkbox cell
+            $mform->addElement('html', '<td style="text-align: center;">');
+            $mform->addElement('checkbox', $checkboxid, '');
+            $mform->setDefault($checkboxid, $ischecked);
             $mform->addElement('html', '</td>');
             
-            // Short name
+            // Column type cell
             $mform->addElement('html', '<td>');
-            $mform->addElement('text', "short_name_{$index}", '', ['size' => 20]);
-            $mform->setType("short_name_{$index}", PARAM_TEXT);
-            $mform->setDefault("short_name_{$index}", $existingshortname ?: $headername);
-            $mform->disabledIf("short_name_{$index}", "selected_{$index}", 'notchecked');
+            $mform->addElement('select', $typeid, '', $typeoptions);
+            $mform->setDefault($typeid, $existingtype);
+            $mform->disabledIf($typeid, $checkboxid, 'notchecked');
             $mform->addElement('html', '</td>');
             
-            // Row end
+            // Short name cell
+            $mform->addElement('html', '<td>');
+            $mform->addElement('text', $nameid, '', ['size' => 20]);
+            $mform->setType($nameid, PARAM_TEXT);
+            $mform->setDefault($nameid, $existingshortname ?: $headername);
+            $mform->disabledIf($nameid, $checkboxid, 'notchecked');
+            $mform->addElement('html', '</td>');
+            
+            // End row
             $mform->addElement('html', '</tr>');
         }
         
-        $mform->addElement('html', '</tbody></table>');
+        $mform->addElement('html', '</tbody></table></div>');
+        
+        // Add CSS and JavaScript to properly position form elements in table cells
+        $mform->addElement('html', '<style>
+        .column-mapping-table-wrapper { position: relative; }
+        .column-mapping-table-wrapper .fitem {
+            margin: 0;
+            border: none;
+            background: transparent;
+            padding: 0;
+        }
+        .column-mapping-table-wrapper .fitemtitle {
+            display: none;
+        }
+        .column-mapping-table-wrapper .felement {
+            margin: 0;
+            padding: 0;
+        }
+        .column-mapping-table-wrapper table.generaltable td {
+            vertical-align: middle;
+        }
+        </style>');
+        
+        $mform->addElement('html', '<script>
+        require(["jquery"], function($) {
+            function fixTableLayout() {
+                var $table = $(".column-mapping-table-wrapper table.generaltable").first();
+                if (!$table.length) return;
+                
+                // Find and move each form element to its corresponding table cell
+                $table.find("tbody tr").each(function() {
+                    var $row = $(this);
+                    var rowIndex = $row.index();
+                    
+                    // Find checkbox - look for the input element (column 3: index 2)
+                    var checkboxName = "selected_" + rowIndex;
+                    var $checkboxInput = $("input[name=\"" + checkboxName + "\"]");
+                    if ($checkboxInput.length) {
+                        var $checkboxItem = $checkboxInput.closest(".fitem");
+                        if ($checkboxItem.length && !$row.find("td").eq(2).find($checkboxInput).length) {
+                            var $checkboxCell = $row.find("td").eq(2);
+                            $checkboxCell.html("");
+                            $checkboxCell.append($checkboxItem);
+                        }
+                    }
+                    
+                    // Find select dropdown (column 4: index 3)
+                    var selectName = "column_type_" + rowIndex;
+                    var $selectInput = $("select[name=\"" + selectName + "\"]");
+                    if ($selectInput.length) {
+                        var $selectItem = $selectInput.closest(".fitem");
+                        if ($selectItem.length && !$row.find("td").eq(3).find($selectInput).length) {
+                            var $typeCell = $row.find("td").eq(3);
+                            $typeCell.html("");
+                            $typeCell.append($selectItem);
+                        }
+                    }
+                    
+                    // Find text input (column 5: index 4)
+                    var textName = "short_name_" + rowIndex;
+                    var $textInput = $("input[name=\"" + textName + "\"]");
+                    if ($textInput.length) {
+                        var $textItem = $textInput.closest(".fitem");
+                        if ($textItem.length && !$row.find("td").last().find($textInput).length) {
+                            var $nameCell = $row.find("td").last();
+                            $nameCell.html("");
+                            $nameCell.append($textItem);
+                        }
+                    }
+                });
+            }
+            
+            $(document).ready(fixTableLayout);
+            setTimeout(fixTableLayout, 50);
+            setTimeout(fixTableLayout, 200);
+            setTimeout(fixTableLayout, 500);
+        });
+        </script>');
+        
+        // Wrap table in a div for better control
+        $mform->addElement('html', '<div class="column-mapping-table-wrapper">');
         
         // Buttons
         $this->add_action_buttons(true, get_string('save', 'core'));

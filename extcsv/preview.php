@@ -113,21 +113,6 @@ if ($error) {
         ['class' => 'btn btn-secondary']
     );
 } else {
-    // Show headers
-    echo html_writer::tag('h3', get_string('columns', 'local_extcsv'));
-    if (!empty($preview['headers'])) {
-        $table = new html_table();
-        $table->head = [get_string('column_number', 'local_extcsv'), get_string('column_name', 'local_extcsv')];
-        $table->attributes['class'] = 'generaltable';
-
-        foreach ($preview['headers'] as $index => $header) {
-            $table->data[] = [$index + 1, htmlspecialchars($header)];
-        }
-        echo html_writer::table($table);
-    } else {
-        echo html_writer::div(get_string('nocolumns', 'local_extcsv'), 'alert alert-info');
-    }
-
     // Show sample rows
     if (!empty($preview['rows'])) {
         echo html_writer::tag('h3', get_string('samplerows', 'local_extcsv'));
