@@ -33,16 +33,19 @@ use local_extcsv\form\column_mapping_form;
 // Check permissions
 source_manager::require_manage_capability();
 
-// Get source ID
-$id = required_param('id', PARAM_INT);
+// Get source ID - can be from URL (GET) or form POST data
+$id = optional_param('id', 0, PARAM_INT);
+if (!$id) {
+    // Try to get from form data (sourceid field)
+    $id = optional_param('sourceid', 0, PARAM_INT);
+}
+if (!$id) {
+    throw new moodle_exception('missingparam', 'error', '', 'id');
+}
 
 // Load source directly from DB to avoid persistent memory issues
 global $DB;
 $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $id], '*', MUST_EXIST);
-
-// Create source object only when needed (for saving)
-$source = new \local_extcsv\source();
-$source->from_record($sourcerecord);
 
 // Page setup
 $PAGE->set_context(context_system::instance());
@@ -80,18 +83,22 @@ $mappingsaved = false;
 if (!$error && !empty($preview['headers'])) {
     $formdata = ['headers' => $preview['headers'], 'existing_config' => $existingconfig];
     $mappingform = new column_mapping_form(null, $formdata);
-    $mappingform->set_data(['sourceid' => $id]);
+    $mappingform->set_data(['id' => $id, 'sourceid' => $id]);
     
     if ($mappingform->is_cancelled()) {
         redirect(new moodle_url('/local/extcsv/index.php'));
     }
     
     if ($data = $mappingform->get_processed_data()) {
-        // Save columns configuration
-        $configjson = json_encode($data);
-        $source->set('columns_config', $configjson);
-        $source->save();
-        $mappingsaved = true;
+        // Save columns configuration - use direct DB update to avoid persistent memory issues
+        global $DB;
+        $configjson = json_encode($data, JSON_UNESCAPED_UNICODE);
+        
+        $updateobj = new \stdClass();
+        $updateobj->id = $id;
+        $updateobj->columns_config = $configjson;
+        $updateobj->timemodified = time();
+        $DB->update_record('local_extcsv_sources', $updateobj);
         
         redirect(
             new moodle_url('/local/extcsv/preview.php', ['id' => $id]),

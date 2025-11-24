@@ -48,7 +48,9 @@ class column_mapping_form extends moodleform {
         $headers = $this->_customdata['headers'] ?? [];
         $existingconfig = $this->_customdata['existing_config'] ?? null;
         
-        // Hidden field for source ID
+        // Hidden fields for source ID (both names for compatibility)
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
         $mform->addElement('hidden', 'sourceid');
         $mform->setType('sourceid', PARAM_INT);
         
