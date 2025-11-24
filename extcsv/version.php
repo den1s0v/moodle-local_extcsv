@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_extcsv';
-$plugin->version   = 2024010400;  // YYYYMMDDHH format - increment whenever you make changes
+$plugin->version   = 2024020400;  // YYYYMMDDHH format - increment whenever you make changes
 $plugin->requires  = 2020061500;  // Requires Moodle 3.9
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = 'v0.1.0';
