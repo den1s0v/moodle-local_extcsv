@@ -73,15 +73,7 @@ try {
 }
 
 // Handle column mapping form submission
-// Parse directly from DB record instead of using persistent object
-$existingconfig = null;
-if (!empty($sourcerecord->columns_config)) {
-    $decoded = json_decode($sourcerecord->columns_config, true);
-    if (json_last_error() === JSON_ERROR_NONE) {
-        $existingconfig = $decoded;
-    }
-}
-
+$existingconfig = data_manager::parse_columns_config($sourcerecord);
 $mappingform = null;
 $mappingsaved = false;
 

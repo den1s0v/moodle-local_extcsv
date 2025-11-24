@@ -59,37 +59,34 @@ class update_sources extends \core\task\scheduled_task {
         $sourcerecords = $DB->get_records('local_extcsv_sources', ['status' => source::STATUS_ENABLED], 'name');
         
         foreach ($sourcerecords as $sourcerecord) {
-            $source = new source();
-            $source->from_record($sourcerecord);
-            $this->update_source($source);
-            // Unset to free memory
-            unset($source);
+            // Pass DB record directly to avoid persistent memory issues
+            $this->update_source_record($sourcerecord);
         }
     }
 
     /**
-     * Update a single source
+     * Update a single source from DB record
      *
-     * @param source $source
+     * @param \stdClass $sourcerecord DB record
      */
-    protected function update_source($source) {
+    protected function update_source_record($sourcerecord) {
         // Check if source has schedule configured
-        $schedule = $source->get('schedule');
+        $schedule = $sourcerecord->schedule ?? null;
         if (empty($schedule)) {
             return; // Skip sources without schedule
         }
 
         // Check if it's time to update based on schedule
-        if (!$this->should_update($source, $schedule)) {
+        if (!$this->should_update_from_record($sourcerecord, $schedule)) {
             return;
         }
 
-        // Check if columns are configured
-        $columnsconfig = data_manager::parse_columns_config($source);
+        // Check if columns are configured - use DB record directly
+        $columnsconfig = data_manager::parse_columns_config($sourcerecord);
         if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
             $error = get_string('columnsnotconfigured', 'local_extcsv');
-            $source->set_update_status(source::UPDATE_STATUS_ERROR, $error);
-            mtrace("Error updating source '{$source->get('name')}': {$error}");
+            $this->set_update_status($sourcerecord->id, source::UPDATE_STATUS_ERROR, $error);
+            mtrace("Error updating source '{$sourcerecord->name}': {$error}");
             return;
         }
 
@@ -97,6 +94,10 @@ class update_sources extends \core\task\scheduled_task {
             // We may need a lot of memory here.
             core_php_time_limit::raise();
             raise_memory_limit(MEMORY_HUGE);
+
+            // Create source object only when needed
+            $source = new source();
+            $source->from_record($sourcerecord);
 
             // Mark as pending
             $source->set_update_status(source::UPDATE_STATUS_PENDING);
@@ -109,14 +110,66 @@ class update_sources extends \core\task\scheduled_task {
 
             // Mark as success
             $source->set_update_status(source::UPDATE_STATUS_SUCCESS);
-            mtrace("Source '{$source->get('name')}' updated successfully. Saved {$saved} rows.");
+            mtrace("Source '{$sourcerecord->name}' updated successfully. Saved {$saved} rows.");
 
         } catch (\Exception $e) {
             // Mark as error
             $error = $e->getMessage();
-            $source->set_update_status(source::UPDATE_STATUS_ERROR, $error);
-            mtrace("Error updating source '{$source->get('name')}': {$error}");
+            $this->set_update_status($sourcerecord->id, source::UPDATE_STATUS_ERROR, $error);
+            mtrace("Error updating source '{$sourcerecord->name}': {$error}");
         }
+    }
+
+    /**
+     * Set update status directly via DB
+     *
+     * @param int $sourceid
+     * @param string $status
+     * @param string|null $error
+     */
+    protected function set_update_status($sourceid, $status, $error = null) {
+        global $DB;
+        $update = new \stdClass();
+        $update->id = $sourceid;
+        $update->lastupdate = time();
+        $update->lastupdatestatus = $status;
+        $update->lastupdateerror = $error;
+        $update->timemodified = time();
+        $DB->update_record('local_extcsv_sources', $update);
+    }
+
+    /**
+     * Check if source should be updated based on schedule (from DB record)
+     *
+     * @param \stdClass $sourcerecord DB record
+     * @param string $schedule Cron expression or interval
+     * @return bool
+     */
+    protected function should_update_from_record($sourcerecord, $schedule) {
+        $lastupdate = $sourcerecord->lastupdate ?? null;
+        if (empty($lastupdate)) {
+            return true; // Never updated, update now
+        }
+
+        // Check if schedule is a cron expression
+        if ($this->is_cron_expression($schedule)) {
+            return $this->check_cron_schedule($schedule, $lastupdate);
+        }
+
+        // Otherwise treat as interval (format: "N minutes/hours/days")
+        return $this->check_interval($schedule, $lastupdate);
+    }
+
+    /**
+     * Update a single source (backward compatibility - kept for reference)
+     *
+     * @param source $source
+     */
+    protected function update_source($source) {
+        // Convert to DB record to avoid persistent memory issues
+        global $DB;
+        $sourcerecord = $DB->get_record('local_extcsv_sources', ['id' => $source->get('id')], '*', MUST_EXIST);
+        $this->update_source_record($sourcerecord);
     }
 
     /**

@@ -89,20 +89,78 @@ class data_manager {
     }
 
     /**
-     * Parse columns configuration from source
+     * Get property value from persistent object using reflection to avoid memory issues
      *
-     * @param source $source
+     * @param object $object Persistent object
+     * @param string $property Property name
+     * @return mixed Property value or null
+     */
+    protected static function get_persistent_property($object, $property) {
+        try {
+            $reflection = new \ReflectionClass($object);
+            
+            // Try 'raw' property first (Moodle persistent API)
+            if ($reflection->hasProperty('raw')) {
+                $rawprop = $reflection->getProperty('raw');
+                $rawprop->setAccessible(true);
+                $raw = $rawprop->getValue($object);
+                if (isset($raw[$property])) {
+                    return $raw[$property];
+                }
+            }
+            
+            // Fallback to 'data' property
+            if ($reflection->hasProperty('data')) {
+                $dataprop = $reflection->getProperty('data');
+                $dataprop->setAccessible(true);
+                $data = $dataprop->getValue($object);
+                if (isset($data[$property])) {
+                    return $data[$property];
+                }
+            }
+            
+            // Last resort: use get() method
+            return $object->get($property);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Parse columns configuration from source, DB record, or JSON string
+     *
+     * @param source|\stdClass|string|null $source Source object, DB record, or JSON string
      * @return array|null Parsed columns configuration or null
      */
     public static function parse_columns_config($source) {
-        $columnsconfigraw = $source->get('columns_config');
+        if ($source === null) {
+            return null;
+        }
+        
+        $columnsconfigraw = null;
+        
+        // If it's a string, treat it as JSON
+        if (is_string($source)) {
+            $columnsconfigraw = $source;
+        }
+        // If it's a DB record (stdClass), get columns_config property directly
+        else if ($source instanceof \stdClass) {
+            $columnsconfigraw = $source->columns_config ?? null;
+        }
+        // Otherwise, assume it's a persistent source object - use reflection to avoid get()
+        else {
+            $columnsconfigraw = self::get_persistent_property($source, 'columns_config');
+        }
+        
         if (empty($columnsconfigraw)) {
             return null;
         }
+        
         $columnsconfig = json_decode($columnsconfigraw, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return null;
         }
+        
         return $columnsconfig;
     }
 
@@ -316,7 +374,13 @@ class data_manager {
             return 0;
         }
 
-        $sourceid = $source->get('id');
+        // Get source ID using reflection to avoid get() calls
+        $sourceid = self::get_persistent_property($source, 'id');
+        if ($sourceid === null) {
+            throw new moodle_exception('invalidoperation', 'local_extcsv');
+        }
+        
+        // Get columns_config using parse_columns_config which handles reflection
         $columnsconfig = self::parse_columns_config($source);
 
         // First row is headers
