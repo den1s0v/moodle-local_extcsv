@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use context_system;
 use moodle_exception;
+use local_extcsv\model\source_model;
 
 /**
  * Source manager class
@@ -42,7 +43,7 @@ class source_manager {
      * Get all sources
      *
      * @param string|null $status Filter by status
-     * @return \local_extcsv\model\source_model[]
+     * @return source_model[]
      */
     public static function get_all_sources($status = null) {
         global $DB;
@@ -66,7 +67,7 @@ class source_manager {
 
         $sources = [];
         foreach ($records as $record) {
-            $source = new \local_extcsv\model\source_model();
+            $source = new source_model();
             $source->from_record($record);
             $sources[] = $source;
         }
@@ -78,11 +79,11 @@ class source_manager {
      * Get source by ID
      *
      * @param int $id
-     * @return \local_extcsv\model\source_model|null
+     * @return source_model|null
      */
     public static function get_source($id) {
         try {
-            $source = new \local_extcsv\model\source_model($id);
+            $source = new source_model($id);
             return $source->exists() ? $source : null;
         } catch (\dml_missing_record_exception $e) {
             return null;
@@ -92,17 +93,17 @@ class source_manager {
     /**
      * Get enabled sources
      *
-     * @return \local_extcsv\model\source_model[]
+     * @return source_model[]
      */
     public static function get_enabled_sources() {
-        return self::get_all_sources(\local_extcsv\model\source_model::STATUS_ENABLED);
+        return self::get_all_sources(source_model::STATUS_ENABLED);
     }
 
     /**
      * Create new source
      *
      * @param \stdClass $data
-     * @return \local_extcsv\model\source_model
+     * @return source_model
      */
     public static function create_source($data) {
         // Filter only allowed fields from form data
@@ -115,7 +116,7 @@ class source_manager {
         }
         
         // Create source using model
-        $source = new \local_extcsv\model\source_model();
+        $source = new source_model();
         foreach ((array)$sourcedata as $field => $value) {
             $source->set($field, $value);
         }
@@ -129,7 +130,7 @@ class source_manager {
      *
      * @param int $id
      * @param \stdClass $data
-     * @return \local_extcsv\model\source_model
+     * @return source_model
      * @throws moodle_exception
      */
     public static function update_source($id, $data) {
@@ -211,7 +212,7 @@ class source_manager {
             raise_memory_limit(MEMORY_HUGE);
 
             // Create source object using model
-            $source = new \local_extcsv\model\source_model();
+            $source = new source_model();
             $source->from_record($sourcerecord);
             
             // Check if columns are configured
@@ -221,7 +222,7 @@ class source_manager {
             }
 
             // Mark as pending
-            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_PENDING);
+            $source->setUpdateStatus(source_model::UPDATE_STATUS_PENDING);
 
             // Import data
             $rows = csv_importer::import_from_source($source);
@@ -230,7 +231,7 @@ class source_manager {
             $saved = data_manager::save_csv_data($source, $rows);
 
             // Mark as success
-            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_SUCCESS);
+            $source->setUpdateStatus(source_model::UPDATE_STATUS_SUCCESS);
 
             return [
                 'success' => true,
@@ -241,7 +242,7 @@ class source_manager {
         } catch (\Exception $e) {
             // Mark as error
             $error = $e->getMessage();
-            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_ERROR, $error);
+            $source->setUpdateStatus(source_model::UPDATE_STATUS_ERROR, $error);
 
             return [
                 'success' => false,

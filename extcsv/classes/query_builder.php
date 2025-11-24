@@ -27,6 +27,7 @@ namespace local_extcsv;
 defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
+use local_extcsv\model\source_model;
 
 /**
  * Query builder class for preprocessing SQL queries with field name substitution
@@ -37,7 +38,7 @@ use moodle_exception;
  */
 class query_builder {
 
-    /** @var \local_extcsv\model\source_model Source instance */
+    /** @var source_model Source instance */
     protected $source;
 
     /** @var array Field name mapping: short_name => field_name */
@@ -46,7 +47,7 @@ class query_builder {
     /**
      * Constructor
      *
-     * @param \local_extcsv\model\source_model $source
+     * @param source_model $source
      */
     public function __construct($source) {
         $this->source = $source;

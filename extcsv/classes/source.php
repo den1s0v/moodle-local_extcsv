@@ -26,6 +26,8 @@ namespace local_extcsv;
 
 defined('MOODLE_INTERNAL') || die();
 
+use local_extcsv\model\source_model;
+
 /**
  * Source class alias for backward compatibility
  *
@@ -37,7 +39,8 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2024
  * @license    http://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
-class source extends \local_extcsv\model\source_model {
+
+class source extends source_model {
     // All constants and methods are inherited from source_model
     // This class exists only for backward compatibility
 }

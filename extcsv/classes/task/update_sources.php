@@ -30,6 +30,7 @@ use local_extcsv\source;
 use local_extcsv\source_manager;
 use local_extcsv\csv_importer;
 use local_extcsv\data_manager;
+use local_extcsv\model\source_model;
 
 /**
  * Scheduled task for updating CSV sources
@@ -56,7 +57,7 @@ class update_sources extends \core\task\scheduled_task {
         global $DB;
         
         // Load sources directly from DB to avoid persistent memory issues
-        $sourcerecords = $DB->get_records('local_extcsv_sources', ['status' => \local_extcsv\model\source_model::STATUS_ENABLED], 'name');
+        $sourcerecords = $DB->get_records('local_extcsv_sources', ['status' => source_model::STATUS_ENABLED], 'name');
         
         foreach ($sourcerecords as $sourcerecord) {
             // Pass DB record directly to avoid persistent memory issues
@@ -85,7 +86,7 @@ class update_sources extends \core\task\scheduled_task {
         $columnsconfig = data_manager::parse_columns_config($sourcerecord);
         if (empty($columnsconfig) || empty($columnsconfig['columns'])) {
             $error = get_string('columnsnotconfigured', 'local_extcsv');
-            $this->set_update_status($sourcerecord->id, \local_extcsv\model\source_model::UPDATE_STATUS_ERROR, $error);
+            $this->set_update_status($sourcerecord->id, source_model::UPDATE_STATUS_ERROR, $error);
             mtrace("Error updating source '{$sourcerecord->name}': {$error}");
             return;
         }
@@ -96,11 +97,11 @@ class update_sources extends \core\task\scheduled_task {
             raise_memory_limit(MEMORY_HUGE);
 
             // Create source object using model
-            $source = new \local_extcsv\model\source_model();
+            $source = new source_model();
             $source->from_record($sourcerecord);
 
             // Mark as pending
-            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_PENDING);
+            $source->setUpdateStatus(source_model::UPDATE_STATUS_PENDING);
 
             // Import data
             $rows = csv_importer::import_from_source($source);
@@ -109,13 +110,13 @@ class update_sources extends \core\task\scheduled_task {
             $saved = data_manager::save_csv_data($source, $rows);
 
             // Mark as success
-            $source->setUpdateStatus(\local_extcsv\model\source_model::UPDATE_STATUS_SUCCESS);
+            $source->setUpdateStatus(source_model::UPDATE_STATUS_SUCCESS);
             mtrace("Source '{$sourcerecord->name}' updated successfully. Saved {$saved} rows.");
 
         } catch (\Exception $e) {
             // Mark as error
             $error = $e->getMessage();
-            $this->set_update_status($sourcerecord->id, \local_extcsv\model\source_model::UPDATE_STATUS_ERROR, $error);
+            $this->set_update_status($sourcerecord->id, source_model::UPDATE_STATUS_ERROR, $error);
             mtrace("Error updating source '{$sourcerecord->name}': {$error}");
         }
     }

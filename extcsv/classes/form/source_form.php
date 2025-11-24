@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/formslib.php');
 
 use moodleform;
+use local_extcsv\model\source_model;
 
 /**
  * Form for creating/editing sources
@@ -75,11 +76,11 @@ class source_form extends moodleform {
 
         // Status
         $mform->addElement('select', 'status', get_string('status', 'local_extcsv'), [
-            \local_extcsv\source::STATUS_ENABLED => get_string('status_enabled', 'local_extcsv'),
-            \local_extcsv\source::STATUS_DISABLED => get_string('status_disabled', 'local_extcsv'),
-            \local_extcsv\source::STATUS_FROZEN => get_string('status_frozen', 'local_extcsv'),
+            source_model::STATUS_ENABLED => get_string('status_enabled', 'local_extcsv'),
+            source_model::STATUS_DISABLED => get_string('status_disabled', 'local_extcsv'),
+            source_model::STATUS_FROZEN => get_string('status_frozen', 'local_extcsv'),
         ]);
-        $mform->setDefault('status', \local_extcsv\source::STATUS_DISABLED);
+        $mform->setDefault('status', source_model::STATUS_DISABLED);
 
         // URL
         $mform->addElement('textarea', 'url', get_string('url', 'local_extcsv'), ['rows' => 2]);
@@ -89,10 +90,10 @@ class source_form extends moodleform {
 
         // Content type
         $mform->addElement('select', 'content_type', get_string('content_type', 'local_extcsv'), [
-            \local_extcsv\source::CONTENT_TYPE_CSV => get_string('content_type_csv', 'local_extcsv'),
-            \local_extcsv\source::CONTENT_TYPE_TSV => get_string('content_type_tsv', 'local_extcsv'),
+            source_model::CONTENT_TYPE_CSV => get_string('content_type_csv', 'local_extcsv'),
+            source_model::CONTENT_TYPE_TSV => get_string('content_type_tsv', 'local_extcsv'),
         ]);
-        $mform->setDefault('content_type', \local_extcsv\source::CONTENT_TYPE_CSV);
+        $mform->setDefault('content_type', source_model::CONTENT_TYPE_CSV);
 
         // Schedule mode
         $mform->addElement('select', 'schedule_mode', get_string('schedule_mode', 'local_extcsv'), [

@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
 use local_extcsv\tools\pattern_tester;
+use local_extcsv\model\source_model;
 
 /**
  * Data manager class
@@ -92,7 +93,7 @@ class data_manager {
     /**
      * Parse columns configuration from source, DB record, or JSON string
      *
-     * @param \local_extcsv\model\source_model|\stdClass|string|null $source Source object, DB record, or JSON string
+     * @param source_model|\stdClass|string|null $source Source object, DB record, or JSON string
      * @return array|null Parsed columns configuration or null
      */
     public static function parse_columns_config($source) {
@@ -329,7 +330,7 @@ class data_manager {
     /**
      * Save CSV rows to database
      *
-     * @param \local_extcsv\model\source_model $source
+     * @param source_model $source
      * @param array $csvrows Array of CSV rows (first row should be headers)
      * @return int Number of rows saved
      * @throws moodle_exception

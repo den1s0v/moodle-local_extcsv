@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use curl;
 use moodle_exception;
+use local_extcsv\model\source_model;
 
 /**
  * CSV importer class
@@ -220,7 +221,7 @@ class csv_importer {
     /**
      * Download and parse CSV/TSV from source
      *
-     * @param \local_extcsv\model\source_model $source
+     * @param source_model $source
      * @return array Array of rows
      * @throws moodle_exception
      */

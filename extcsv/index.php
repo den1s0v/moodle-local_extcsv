@@ -28,6 +28,7 @@ require_once($CFG->libdir . '/adminlib.php');
 use local_extcsv\source_manager;
 use local_extcsv\data_manager;
 use local_extcsv\csv_importer;
+use local_extcsv\model\source_model;
 
 // Check permissions
 source_manager::require_manage_capability();
@@ -115,13 +116,13 @@ foreach ($sources as $source) {
     $status = $source->get('status');
     $statusclass = '';
     switch ($status) {
-        case \local_extcsv\model\source_model::STATUS_ENABLED:
+        case source_model::STATUS_ENABLED:
             $statusclass = 'badge badge-success';
             break;
-        case \local_extcsv\model\source_model::STATUS_DISABLED:
+        case source_model::STATUS_DISABLED:
             $statusclass = 'badge badge-secondary';
             break;
-        case \local_extcsv\model\source_model::STATUS_FROZEN:
+        case source_model::STATUS_FROZEN:
             $statusclass = 'badge badge-warning';
             break;
     }
@@ -132,7 +133,7 @@ foreach ($sources as $source) {
     $lastupdatestatus = $source->get('lastupdatestatus');
     $statusbadge = '';
     if ($lastupdatestatus) {
-        $badgeclass = $lastupdatestatus === \local_extcsv\model\source_model::UPDATE_STATUS_SUCCESS ? 'badge-success' : 'badge-danger';
+        $badgeclass = $lastupdatestatus === source_model::UPDATE_STATUS_SUCCESS ? 'badge-success' : 'badge-danger';
         $statusbadge = html_writer::span(
             get_string("status_{$lastupdatestatus}", 'local_extcsv'),
             "badge {$badgeclass}"
