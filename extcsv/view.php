@@ -63,6 +63,8 @@ $fields = ['id', 'sourceid', 'rownum'];
 $headers = ['ID', get_string('row', 'local_extcsv')];
 $fieldmapping = [];
 $headerfieldmapping = [];
+// Map field names to their types for formatting
+$fieldtypemapping = [];
 
 if ($columnsconfig && !empty($columnsconfig['columns'])) {
     foreach ($columnsconfig['columns'] as $colconfig) {
@@ -77,6 +79,8 @@ if ($columnsconfig && !empty($columnsconfig['columns'])) {
                 $fieldmapping[] = $fieldname;
                 $headers[] = htmlspecialchars($shortname);
                 $headerfieldmapping[] = $fieldname;
+                // Store type for this field
+                $fieldtypemapping[$fieldname] = $type;
             }
         }
     }
@@ -172,17 +176,29 @@ if ($total == 0) {
             $row = [$record->id, $record->rownum];
             foreach ($headerfieldmapping as $fieldname) {
                 $value = $record->$fieldname ?? '';
-                // Limit text length to avoid memory issues
-                if (is_string($value) && strlen($value) > 200) {
-                    $value = substr($value, 0, 200) . '...';
-                }
-                if (is_numeric($value) && strlen((string)$value) > 0) {
-                    $row[] = $value;
-                } else if (empty($value)) {
-                    $row[] = '-';
+                $fieldtype = $fieldtypemapping[$fieldname] ?? 'text';
+                
+                // Format date fields
+                if ($fieldtype === 'date' && !empty($value) && is_numeric($value)) {
+                    // Format date as MM.DD.YYYY
+                    $value = userdate($value, '%m.%d.%Y');
                 } else {
-                    $row[] = htmlspecialchars($value);
+                    // Limit text length to avoid memory issues
+                    if (is_string($value) && strlen($value) > 200) {
+                        $value = substr($value, 0, 200) . '...';
+                    }
+                    if (is_numeric($value) && strlen((string)$value) > 0) {
+                        // Keep numeric value as is (for int, float, bool)
+                        $row[] = $value;
+                        continue;
+                    } else if (empty($value)) {
+                        $row[] = '-';
+                        continue;
+                    } else {
+                        $value = htmlspecialchars($value);
+                    }
                 }
+                $row[] = $value;
             }
             $table->data[] = $row;
         }
