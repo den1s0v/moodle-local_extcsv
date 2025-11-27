@@ -180,8 +180,8 @@ if ($total == 0) {
                 
                 // Format date fields
                 if ($fieldtype === 'date' && !empty($value) && is_numeric($value)) {
-                    // Format date as MM.DD.YYYY
-                    $value = userdate($value, '%m.%d.%Y');
+                    // Format date as DD.MM.YYYY (Russian notation)
+                    $value = userdate($value, '%d.%m.%Y');
                 } else {
                     // Limit text length to avoid memory issues
                     if (is_string($value) && strlen($value) > 200) {
