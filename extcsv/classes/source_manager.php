@@ -100,6 +100,29 @@ class source_manager {
     }
 
     /**
+     * Get source by shortname
+     *
+     * @param string $shortname
+     * @return source_model|null
+     */
+    public static function get_source_by_shortname(string $shortname) {
+        global $DB;
+
+        if ($shortname === '') {
+            return null;
+        }
+
+        $record = $DB->get_record('local_extcsv_sources', ['shortname' => $shortname]);
+        if (!$record) {
+            return null;
+        }
+
+        $source = new source_model();
+        $source->from_record($record);
+        return $source;
+    }
+
+    /**
      * Create new source
      *
      * @param \stdClass $data
