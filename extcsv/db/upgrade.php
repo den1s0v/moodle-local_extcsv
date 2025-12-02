@@ -89,6 +89,25 @@ function xmldb_local_extcsv_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2024030401, 'local', 'extcsv');
     }
 
+    if ($oldversion < 2025120200) {
+        // Add shortname field to local_extcsv_sources for integrations (lookup by short name).
+        $table = new xmldb_table('local_extcsv_sources');
+        $field = new xmldb_field('shortname', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'name');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Add unique index on shortname to avoid duplicates (optional shortname can be NULL).
+        $index = new xmldb_index('shortname_uix', XMLDB_INDEX_UNIQUE, ['shortname']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Extcsv savepoint.
+        upgrade_plugin_savepoint(true, 2025120200, 'local', 'extcsv');
+    }
+
     return true;
 }
 

@@ -107,7 +107,7 @@ class source_manager {
      */
     public static function create_source($data) {
         // Filter only allowed fields from form data
-        $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
+        $allowedfields = ['name', 'shortname', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
         $sourcedata = new \stdClass();
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
@@ -140,7 +140,7 @@ class source_manager {
         }
         
         // Filter only allowed fields from form data (exclude system fields and id)
-        $allowedfields = ['name', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
+        $allowedfields = ['name', 'shortname', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
         foreach ($allowedfields as $field) {
             if (isset($data->$field)) {
                 $source->set($field, $data->$field);
