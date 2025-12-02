@@ -44,7 +44,12 @@ if (!$source) {
 $PAGE->set_context(context_system::instance());
 $PAGE->set_url(new moodle_url('/local/extcsv/view.php', ['id' => $id]));
 $PAGE->set_title(get_string('viewdata', 'local_extcsv'));
-$PAGE->set_heading(get_string('viewdata', 'local_extcsv') . ': ' . $source->get('name'));
+$heading = get_string('viewdata', 'local_extcsv') . ': ' . $source->get('name');
+$shortname = $source->get('shortname') ?? '';
+if ($shortname) {
+    $heading .= ' (' . html_writer::code($shortname) . ')';
+}
+$PAGE->set_heading($heading);
 $PAGE->set_pagelayout('admin');
 
 // Breadcrumb
@@ -108,6 +113,16 @@ if ($action === 'update' && confirm_sesskey()) {
         redirect($PAGE->url, $result['message'], null, \core\output\notification::NOTIFY_ERROR);
     }
 }
+
+// Show source info
+$sourceinfo = [];
+$sourceinfo[] = html_writer::tag('strong', get_string('name', 'local_extcsv') . ': ') . $source->get('name');
+$shortname = $source->get('shortname') ?? '';
+if ($shortname) {
+    $sourceinfo[] = html_writer::tag('strong', get_string('shortname', 'local_extcsv') . ': ') . html_writer::code($shortname);
+}
+$sourceinfo[] = html_writer::tag('strong', get_string('status', 'local_extcsv') . ': ') . get_string('status_' . $source->get('status'), 'local_extcsv');
+echo html_writer::div(implode(' | ', $sourceinfo), 'mb-3');
 
 // Show warning if columns not configured
 if (!$hascolumnsconfig) {

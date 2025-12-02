@@ -70,6 +70,12 @@ class source_form extends moodleform {
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
+        // Shortname
+        $mform->addElement('text', 'shortname', get_string('shortname', 'local_extcsv'), ['size' => 50]);
+        $mform->setType('shortname', PARAM_ALPHANUMEXT);
+        $mform->addRule('shortname', get_string('maximumchars', '', 100), 'maxlength', 100, 'client');
+        $mform->addHelpButton('shortname', 'shortname', 'local_extcsv');
+
         // Description
         $mform->addElement('textarea', 'description', get_string('description', 'local_extcsv'), ['rows' => 3]);
         $mform->setType('description', PARAM_TEXT);
@@ -128,6 +134,7 @@ class source_form extends moodleform {
             // Get data from source - supports both stdClass and model objects
             if ($source instanceof \stdClass) {
                 $mform->setDefault('name', $source->name ?? '');
+                $mform->setDefault('shortname', $source->shortname ?? '');
                 $mform->setDefault('description', $source->description ?? '');
                 $mform->setDefault('status', $source->status ?? '');
                 $mform->setDefault('url', $source->url ?? '');
@@ -136,6 +143,7 @@ class source_form extends moodleform {
             } else {
                 // Use get() method for model objects
                 $mform->setDefault('name', $source->get('name'));
+                $mform->setDefault('shortname', $source->get('shortname') ?? '');
                 $mform->setDefault('description', $source->get('description'));
                 $mform->setDefault('status', $source->get('status'));
                 $mform->setDefault('url', $source->get('url'));
@@ -165,6 +173,15 @@ class source_form extends moodleform {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
+
+        // Validate shortname uniqueness
+        if (!empty($data['shortname'])) {
+            global $DB;
+            $existing = $DB->get_record('local_extcsv_sources', ['shortname' => $data['shortname']]);
+            if ($existing && (empty($data['id']) || $existing->id != $data['id'])) {
+                $errors['shortname'] = get_string('shortname_already_exists', 'local_extcsv');
+            }
+        }
 
         // Validate schedule
         if ($data['schedule_mode'] === 'simple') {

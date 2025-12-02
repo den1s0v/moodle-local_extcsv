@@ -66,6 +66,11 @@ if ($data = $form->get_data()) {
         // Get ID from form data or URL parameter
         $sourceid = !empty($data->id) ? (int)$data->id : $id;
         
+        // Remove id from data before saving (it's handled separately)
+        if (isset($data->id)) {
+            unset($data->id);
+        }
+        
         if ($sourceid) {
             source_manager::update_source($sourceid, $data);
             $message = get_string('sourceupdated', 'local_extcsv');

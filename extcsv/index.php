@@ -97,6 +97,7 @@ echo html_writer::div(
 $table = new html_table();
 $table->head = [
     get_string('name', 'local_extcsv'),
+    get_string('shortname', 'local_extcsv'),
     get_string('status', 'local_extcsv'),
     get_string('content_type', 'local_extcsv'),
     get_string('lastupdate', 'local_extcsv'),
@@ -175,11 +176,15 @@ foreach ($sources as $source) {
         ['class' => 'btn btn-sm btn-danger']
     );
 
+    $shortname = $source->get('shortname') ?? '';
+    $shortnamedisplay = $shortname ? html_writer::code($shortname) : html_writer::span('-', 'text-muted');
+    
     $table->data[] = [
         html_writer::link(
             new moodle_url('/local/extcsv/edit.php', ['id' => $sourceid]),
             $source->get('name')
         ) . ' (' . $rowcount . ' ' . get_string('rows', 'local_extcsv') . ')',
+        $shortnamedisplay,
         html_writer::span(get_string("status_{$status}", 'local_extcsv'), $statusclass),
         get_string("content_type_{$source->get('content_type')}", 'local_extcsv'),
         $lastupdatestr,
