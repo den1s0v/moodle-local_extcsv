@@ -77,6 +77,15 @@ if ($action === 'update' && $id && confirm_sesskey()) {
     }
 }
 
+if ($action === 'duplicate' && $id && confirm_sesskey()) {
+    try {
+        $duplicated = source_manager::duplicate_source($id);
+        redirect($PAGE->url, get_string('duplicate_success', 'local_extcsv'), null, \core\output\notification::NOTIFY_SUCCESS);
+    } catch (moodle_exception $e) {
+        redirect($PAGE->url, $e->getMessage(), null, \core\output\notification::NOTIFY_ERROR);
+    }
+}
+
 // Get all sources using source_manager
 $sources = source_manager::get_all_sources();
 
@@ -169,6 +178,11 @@ foreach ($sources as $source) {
         new moodle_url($PAGE->url, ['action' => 'update', 'id' => $sourceid, 'sesskey' => sesskey()]),
         get_string('updatenow', 'local_extcsv'),
         ['class' => 'btn btn-sm btn-success']
+    );
+    $actions[] = html_writer::link(
+        new moodle_url($PAGE->url, ['action' => 'duplicate', 'id' => $sourceid, 'sesskey' => sesskey()]),
+        get_string('duplicate', 'local_extcsv'),
+        ['class' => 'btn btn-sm btn-secondary']
     );
     $actions[] = html_writer::link(
         new moodle_url($PAGE->url, ['action' => 'delete', 'id' => $sourceid, 'sesskey' => sesskey()]),

@@ -217,6 +217,112 @@ class source_manager {
     }
 
     /**
+     * Generate unique name for source
+     *
+     * @param string $basename Base name
+     * @param int|null $exclude_id Source ID to exclude from check
+     * @return string Unique name
+     */
+    public static function generate_unique_name(string $basename, ?int $exclude_id = null): string {
+        global $DB;
+
+        $name = $basename;
+        $counter = 0;
+
+        while (true) {
+            $params = ['name' => $name];
+            $where = 'name = :name';
+            if ($exclude_id !== null) {
+                $where .= ' AND id != :exclude_id';
+                $params['exclude_id'] = $exclude_id;
+            }
+
+            $exists = $DB->record_exists_select('local_extcsv_sources', $where, $params);
+            if (!$exists) {
+                return $name;
+            }
+
+            $counter++;
+            if ($counter === 1) {
+                $name = $basename . ' (копия)';
+            } else {
+                $name = $basename . ' (копия ' . $counter . ')';
+            }
+        }
+    }
+
+    /**
+     * Generate unique shortname for source
+     *
+     * @param string $baseshortname Base shortname
+     * @param int|null $exclude_id Source ID to exclude from check
+     * @return string|null Unique shortname or null if baseshortname is empty
+     */
+    public static function generate_unique_shortname(string $baseshortname, ?int $exclude_id = null): ?string {
+        global $DB;
+
+        if (empty($baseshortname)) {
+            return null;
+        }
+
+        $shortname = $baseshortname;
+        $counter = 0;
+
+        while (true) {
+            $params = ['shortname' => $shortname];
+            $where = 'shortname = :shortname';
+            if ($exclude_id !== null) {
+                $where .= ' AND id != :exclude_id';
+                $params['exclude_id'] = $exclude_id;
+            }
+
+            $exists = $DB->record_exists_select('local_extcsv_sources', $where, $params);
+            if (!$exists) {
+                return $shortname;
+            }
+
+            $counter++;
+            if ($counter === 1) {
+                $shortname = $baseshortname . '_copy';
+            } else {
+                $shortname = $baseshortname . '_copy' . $counter;
+            }
+        }
+    }
+
+    /**
+     * Duplicate source
+     *
+     * @param int $id Source ID to duplicate
+     * @return source_model Duplicated source
+     * @throws moodle_exception
+     */
+    public static function duplicate_source(int $id): source_model {
+        $source = self::get_source($id);
+        if (!$source) {
+            throw new moodle_exception('sourcenotfound', 'local_extcsv');
+        }
+
+        // Prepare data for new source
+        $data = new \stdClass();
+        $allowedfields = ['name', 'shortname', 'description', 'status', 'url', 'content_type', 'schedule', 'columns_config'];
+        
+        foreach ($allowedfields as $field) {
+            $value = $source->get($field);
+            if ($value !== null) {
+                $data->$field = $value;
+            }
+        }
+
+        // Generate unique name and shortname
+        $data->name = self::generate_unique_name($source->get('name'));
+        $data->shortname = self::generate_unique_shortname($source->get('shortname'));
+
+        // Create new source
+        return self::create_source($data);
+    }
+
+    /**
      * Manually update source data
      *
      * @param int $id Source ID

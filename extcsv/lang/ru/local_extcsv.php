@@ -68,6 +68,8 @@ $string['preview'] = 'Предпросмотр';
 $string['viewdata'] = 'Просмотр данных';
 $string['update'] = 'Обновить';
 $string['test'] = 'Тестировать';
+$string['duplicate'] = 'Дублировать';
+$string['duplicate_success'] = 'Источник успешно скопирован';
 
 // Status and errors
 $string['lastupdate'] = 'Последнее обновление';

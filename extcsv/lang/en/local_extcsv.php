@@ -68,6 +68,8 @@ $string['preview'] = 'Preview';
 $string['viewdata'] = 'View data';
 $string['update'] = 'Update';
 $string['test'] = 'Test';
+$string['duplicate'] = 'Duplicate';
+$string['duplicate_success'] = 'Source duplicated successfully';
 
 // Status and errors
 $string['lastupdate'] = 'Last update';
