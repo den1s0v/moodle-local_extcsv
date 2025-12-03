@@ -177,7 +177,7 @@ foreach ($sources as $source) {
     );
 
     $shortname = $source->get('shortname') ?? '';
-    $shortnamedisplay = $shortname ? html_writer::code($shortname) : html_writer::span('-', 'text-muted');
+    $shortnamedisplay = $shortname ? html_writer::tag('code', $shortname) : html_writer::span('-', 'text-muted');
     
     $table->data[] = [
         html_writer::link(
