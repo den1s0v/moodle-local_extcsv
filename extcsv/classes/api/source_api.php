@@ -33,6 +33,7 @@ defined('MOODLE_INTERNAL') || die();
 use moodle_exception;
 use local_extcsv\source_manager;
 use local_extcsv\model\source_model;
+use local_extcsv\data_manager;
 
 /**
  * Source API class.
@@ -113,6 +114,84 @@ class source_api {
     }
 
     /**
+     * Build field name mapping from columns_config (short_name => field_name).
+     *
+     * @param source_model $source
+     * @return array Mapping: ['short_name' => 'field_name', ...]
+     */
+    protected static function build_field_mapping(source_model $source): array {
+        $columnsconfig = data_manager::parse_columns_config($source);
+        if (empty($columnsconfig) || !isset($columnsconfig['columns'])) {
+            return [];
+        }
+
+        $mapping = [];
+        foreach ($columnsconfig['columns'] as $colconfig) {
+            $shortname = $colconfig['short_name'] ?? null;
+            $type = $colconfig['type'] ?? 'text';
+            $slot = $colconfig['slot'] ?? null;
+
+            if (empty($shortname) || $slot === null) {
+                continue;
+            }
+
+            $fieldname = data_manager::get_field_name($type, $slot);
+            if ($fieldname !== null) {
+                $mapping[$shortname] = $fieldname;
+            }
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Rename internal field names to logical names in records.
+     *
+     * @param array $records Array of stdClass records
+     * @param source_model $source Source model
+     * @return array Array of records with renamed fields
+     */
+    protected static function rename_fields_in_records(array $records, source_model $source): array {
+        if (empty($records)) {
+            return $records;
+        }
+
+        $fieldmapping = self::build_field_mapping($source);
+        if (empty($fieldmapping)) {
+            // No mapping available, return records as-is.
+            return $records;
+        }
+
+        // Get lists of reserved and internal field names to identify user-defined fields.
+        $reserved = data_manager::get_reserved_field_names();
+        $internal = data_manager::get_all_internal_field_names();
+        $allsystemfields = array_merge($reserved, $internal, array_values($fieldmapping));
+
+        $renamed = [];
+        foreach ($records as $record) {
+            $newrecord = new \stdClass();
+
+            // Copy all fields first (including system and user-defined).
+            foreach ($record as $key => $value) {
+                $newrecord->$key = $value;
+            }
+
+            // Rename mapped fields: copy value from internal field to logical field.
+            foreach ($fieldmapping as $shortname => $fieldname) {
+                if (isset($record->$fieldname)) {
+                    $newrecord->$shortname = $record->$fieldname;
+                    // Remove internal field name to hide it from external API.
+                    unset($newrecord->$fieldname);
+                }
+            }
+
+            $renamed[] = $newrecord;
+        }
+
+        return $renamed;
+    }
+
+    /**
      * Build SQL WHERE clause and params from an array of conditions.
      *
      * @param array|null $conditions
@@ -170,7 +249,7 @@ class source_api {
         $fields = self::normalise_fields($fields);
         $whereinfo = self::build_where_from_conditions($conditions, ['sourceid' => $sourceid]);
 
-        return $DB->get_records_select(
+        $records = $DB->get_records_select(
             'local_extcsv_data',
             $whereinfo['sql'],
             $whereinfo['params'],
@@ -179,6 +258,8 @@ class source_api {
             $limitfrom,
             $limitnum
         );
+
+        return self::rename_fields_in_records($records, $source);
     }
 
     /**
@@ -223,7 +304,7 @@ class source_api {
             $where = '(' . $select . ') AND sourceid = :sourceid';
         }
 
-        return $DB->get_records_select(
+        $records = $DB->get_records_select(
             'local_extcsv_data',
             $where,
             $params,
@@ -232,6 +313,8 @@ class source_api {
             $limitfrom,
             $limitnum
         );
+
+        return self::rename_fields_in_records($records, $source);
     }
 }
 

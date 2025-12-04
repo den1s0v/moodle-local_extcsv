@@ -255,8 +255,14 @@ class column_mapping_form extends moodleform {
         
         $headers = $this->_customdata['headers'] ?? [];
         $selectedcolumns = [];
+        $shortnames = []; // Track short names for uniqueness check
         
-        // Collect selected columns
+        // Get reserved and internal field names for validation
+        $reserved = \local_extcsv\data_manager::get_reserved_field_names();
+        $internal = \local_extcsv\data_manager::get_all_internal_field_names();
+        $forbidden = array_merge($reserved, $internal);
+        
+        // Collect selected columns and validate short names
         foreach ($headers as $index => $headername) {
             $selectedkey = "selected_{$index}";
             if (!empty($data[$selectedkey])) {
@@ -266,12 +272,28 @@ class column_mapping_form extends moodleform {
                 if (empty($shortname)) {
                     $errors["short_name_{$index}"] = get_string('required');
                 } else {
-                    $selectedcolumns[] = [
-                        'column_name' => $headername,
-                        'type' => $type,
-                        'short_name' => $shortname,
-                        'pattern' => $headername,
-                    ];
+                    // Check for reserved field names
+                    if (in_array($shortname, $reserved, true)) {
+                        $errors["short_name_{$index}"] = get_string('shortname_reserved', 'local_extcsv', $shortname);
+                    }
+                    // Check for internal field names
+                    else if (in_array($shortname, $internal, true)) {
+                        $errors["short_name_{$index}"] = get_string('shortname_internal', 'local_extcsv', $shortname);
+                    }
+                    // Check for uniqueness
+                    else if (isset($shortnames[$shortname])) {
+                        $errors["short_name_{$index}"] = get_string('shortname_duplicate', 'local_extcsv', $shortname);
+                    }
+                    
+                    if (!isset($errors["short_name_{$index}"])) {
+                        $shortnames[$shortname] = $index;
+                        $selectedcolumns[] = [
+                            'column_name' => $headername,
+                            'type' => $type,
+                            'short_name' => $shortname,
+                            'pattern' => $headername,
+                        ];
+                    }
                 }
             }
         }

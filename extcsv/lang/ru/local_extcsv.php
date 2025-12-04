@@ -155,4 +155,7 @@ $string['type_bool'] = 'Логическое';
 $string['type_date'] = 'Дата';
 $string['type_json'] = 'JSON';
 $string['noselectedcolumns'] = 'Пожалуйста, выберите хотя бы одну колонку';
+$string['shortname_reserved'] = 'Короткое имя "{$a}" зарезервировано и не может быть использовано';
+$string['shortname_internal'] = 'Короткое имя "{$a}" конфликтует с внутренним именем поля и не может быть использовано';
+$string['shortname_duplicate'] = 'Короткое имя "{$a}" уже используется другой колонкой';
 

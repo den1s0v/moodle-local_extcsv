@@ -450,5 +450,42 @@ class data_manager {
         global $DB;
         return $DB->count_records('local_extcsv_data', ['sourceid' => $sourceid]);
     }
+
+    /**
+     * Get list of reserved field names that cannot be used as short_name
+     *
+     * @return array
+     */
+    public static function get_reserved_field_names(): array {
+        return ['id', 'sourceid', 'rownum', 'timecreated'];
+    }
+
+    /**
+     * Get list of all possible internal field names (text_1, int_2, date_1, etc.)
+     *
+     * @return array
+     */
+    public static function get_all_internal_field_names(): array {
+        $names = [];
+        $types = [
+            self::TYPE_TEXT => self::MAX_TEXT,
+            self::TYPE_INT => self::MAX_INT,
+            self::TYPE_FLOAT => self::MAX_FLOAT,
+            self::TYPE_BOOL => self::MAX_BOOL,
+            self::TYPE_DATE => self::MAX_DATE,
+            self::TYPE_JSON => self::MAX_JSON,
+        ];
+
+        foreach ($types as $type => $max) {
+            for ($slot = 1; $slot <= $max; $slot++) {
+                $fieldname = self::get_field_name($type, $slot);
+                if ($fieldname !== null) {
+                    $names[] = $fieldname;
+                }
+            }
+        }
+
+        return $names;
+    }
 }
 
