@@ -165,24 +165,44 @@ class source_api {
         // Get lists of reserved and internal field names to identify user-defined fields.
         $reserved = data_manager::get_reserved_field_names();
         $internal = data_manager::get_all_internal_field_names();
-        $allsystemfields = array_merge($reserved, $internal, array_values($fieldmapping));
+        // Get all internal field names that are mapped (will be renamed).
+        $mappedinternal = array_values($fieldmapping);
 
         $renamed = [];
         foreach ($records as $record) {
             $newrecord = new \stdClass();
 
-            // Copy all fields first (including system and user-defined).
-            foreach ($record as $key => $value) {
-                $newrecord->$key = $value;
+            // Copy reserved fields (id, sourceid, rownum, timecreated).
+            foreach ($reserved as $reservedfield) {
+                if (isset($record->$reservedfield)) {
+                    $newrecord->$reservedfield = $record->$reservedfield;
+                }
             }
 
             // Rename mapped fields: copy value from internal field to logical field.
             foreach ($fieldmapping as $shortname => $fieldname) {
                 if (isset($record->$fieldname)) {
                     $newrecord->$shortname = $record->$fieldname;
-                    // Remove internal field name to hide it from external API.
-                    unset($newrecord->$fieldname);
                 }
+            }
+
+            // Copy user-defined fields (fields that are not reserved, not internal, and not mapped).
+            foreach ($record as $key => $value) {
+                // Skip reserved fields (already copied).
+                if (in_array($key, $reserved, true)) {
+                    continue;
+                }
+                // Skip internal fields (they should be hidden unless mapped).
+                if (in_array($key, $internal, true)) {
+                    // Only skip if not mapped (mapped ones are already renamed above).
+                    if (!in_array($key, $mappedinternal, true)) {
+                        continue;
+                    }
+                    // If mapped, it's already renamed, so skip the original internal name.
+                    continue;
+                }
+                // This is a user-defined field (e.g., from custom SQL), keep it.
+                $newrecord->$key = $value;
             }
 
             $renamed[] = $newrecord;
