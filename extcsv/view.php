@@ -63,6 +63,33 @@ $perpage = 50;
 // Get column configuration using source model
 $columnsconfig = $source->getColumnsConfig();
 
+// Process filters from GET/POST
+$filters = [];
+$hasactivefilters = false;
+if ($columnsconfig && !empty($columnsconfig['columns'])) {
+    foreach ($columnsconfig['columns'] as $colconfig) {
+        $shortname = $colconfig['short_name'] ?? null;
+        $type = $colconfig['type'] ?? 'text';
+        $slot = $colconfig['slot'] ?? null;
+
+        if ($shortname && $slot !== null) {
+            $fieldname = data_manager::get_field_name($type, $slot);
+            if ($fieldname) {
+                $operatorparam = optional_param("filter_{$fieldname}_operator", '', PARAM_ALPHA);
+                $valueparam = optional_param("filter_{$fieldname}_value", '', PARAM_RAW);
+                
+                if (!empty($valueparam) && trim($valueparam) !== '') {
+                    $filters[$fieldname] = [
+                        'operator' => $operatorparam ?: '=',
+                        'value' => $valueparam
+                    ];
+                    $hasactivefilters = true;
+                }
+            }
+        }
+    }
+}
+
 // Build list of fields to select and headers based on column mapping
 $fields = ['id', 'sourceid', 'rownum'];
 $headers = ['ID', get_string('row', 'local_extcsv')];
@@ -92,10 +119,17 @@ if ($columnsconfig && !empty($columnsconfig['columns'])) {
 }
 
 // Get data with pagination - only select needed fields to save memory
-$total = data_manager::count_source_data($id);
 $limitfrom = $page * $perpage;
 $fieldslist = implode(',', $fields);
-$data = data_manager::get_source_data($id, $limitfrom, $perpage, $fieldslist);
+
+// Use filtered methods if filters are active
+if ($hasactivefilters) {
+    $total = data_manager::count_source_data_filtered($id, $filters, $fieldtypemapping);
+    $data = data_manager::get_source_data_filtered($id, $filters, $fieldtypemapping, $limitfrom, $perpage, $fieldslist);
+} else {
+    $total = data_manager::count_source_data($id);
+    $data = data_manager::get_source_data($id, $limitfrom, $perpage, $fieldslist);
+}
 
 // Check if columns are configured
 $hascolumnsconfig = !empty($columnsconfig) && !empty($columnsconfig['columns']);
@@ -112,6 +146,11 @@ if ($action === 'update' && confirm_sesskey()) {
     } else {
         redirect($PAGE->url, $result['message'], null, \core\output\notification::NOTIFY_ERROR);
     }
+}
+
+// Handle reset filters action
+if ($action === 'resetfilters') {
+    redirect(new moodle_url('/local/extcsv/view.php', ['id' => $id]));
 }
 
 // Show source info
@@ -162,6 +201,170 @@ echo html_writer::div(
     ) : ''),
     'mb-3'
 );
+
+// Build URL with filters for pagination (initialize even if no filters)
+$filterurlparams = ['id' => $id];
+if ($hasactivefilters) {
+    foreach ($filters as $fieldname => $filter) {
+        $filterurlparams["filter_{$fieldname}_operator"] = $filter['operator'];
+        $filterurlparams["filter_{$fieldname}_value"] = $filter['value'];
+    }
+}
+
+// Build filter form if columns are configured
+if ($hascolumnsconfig) {
+    $filterurl = new moodle_url('/local/extcsv/view.php', $filterurlparams);
+    
+    // Determine if spoiler should be expanded
+    $spoilerid = 'filter-spoiler-' . uniqid();
+    
+    echo html_writer::start_div('mb-3');
+    echo html_writer::start_tag('div', ['class' => 'card']);
+    
+    // Spoiler header
+    $spoilerheaderid = $spoilerid . '-header';
+    echo html_writer::start_tag('div', [
+        'class' => 'card-header',
+        'id' => $spoilerheaderid,
+        'style' => 'cursor: pointer;',
+        'data-toggle' => 'collapse',
+        'data-target' => '#' . $spoilerid,
+        'aria-expanded' => $hasactivefilters ? 'true' : 'false',
+        'aria-controls' => $spoilerid
+    ]);
+    echo html_writer::tag('strong', (get_string('filters', 'local_extcsv') ?: 'Фильтры') . ' ');
+    $iconid = $spoilerid . '-icon';
+    echo html_writer::tag('span', $hasactivefilters ? '▼' : '▶', ['id' => $iconid]);
+    echo html_writer::end_tag('div');
+    
+    // Spoiler content
+    echo html_writer::start_tag('div', [
+        'id' => $spoilerid,
+        'class' => 'collapse' . ($hasactivefilters ? ' show' : '')
+    ]);
+    echo html_writer::start_tag('div', ['class' => 'card-body']);
+    
+    // Filter form
+    echo html_writer::start_tag('form', [
+        'method' => 'get',
+        'action' => $PAGE->url->out(false)
+    ]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $id]);
+    
+    // Build filter table
+    echo html_writer::start_tag('table', ['class' => 'generaltable']);
+    echo html_writer::start_tag('thead');
+    echo html_writer::start_tag('tr');
+                echo html_writer::tag('th', get_string('field', 'local_extcsv') ?: 'Поле', ['style' => 'width: 30%;']);
+                echo html_writer::tag('th', get_string('operator', 'local_extcsv') ?: 'Оператор', ['style' => 'width: 20%;']);
+                echo html_writer::tag('th', get_string('value', 'local_extcsv') ?: 'Значение', ['style' => 'width: 50%;']);
+    echo html_writer::end_tag('tr');
+    echo html_writer::end_tag('thead');
+    echo html_writer::start_tag('tbody');
+    
+    // Add filter rows for each field
+    foreach ($columnsconfig['columns'] as $colconfig) {
+        $shortname = $colconfig['short_name'] ?? null;
+        $type = $colconfig['type'] ?? 'text';
+        $slot = $colconfig['slot'] ?? null;
+
+        if ($shortname && $slot !== null) {
+            $fieldname = data_manager::get_field_name($type, $slot);
+            if ($fieldname) {
+                $operators = data_manager::get_operators_for_type($type);
+                $currentoperator = $filters[$fieldname]['operator'] ?? '=';
+                $currentvalue = $filters[$fieldname]['value'] ?? '';
+                
+                echo html_writer::start_tag('tr');
+                
+                // Field name
+                echo html_writer::start_tag('td');
+                echo html_writer::tag('label', htmlspecialchars($shortname), [
+                    'for' => "filter_{$fieldname}_value"
+                ]);
+                echo html_writer::end_tag('td');
+                
+                // Operator select
+                echo html_writer::start_tag('td');
+                $selectid = "filter_{$fieldname}_operator";
+                $select = html_writer::start_tag('select', [
+                    'name' => $selectid,
+                    'id' => $selectid,
+                    'class' => 'form-control'
+                ]);
+                foreach ($operators as $opvalue => $oplabel) {
+                    $selected = ($currentoperator === $opvalue) ? 'selected' : '';
+                    $select .= html_writer::tag('option', $oplabel, [
+                        'value' => $opvalue,
+                        'selected' => $selected
+                    ]);
+                }
+                $select .= html_writer::end_tag('select');
+                echo $select;
+                echo html_writer::end_tag('td');
+                
+                // Value input
+                echo html_writer::start_tag('td');
+                $inputid = "filter_{$fieldname}_value";
+                $inputtype = ($type === 'date') ? 'text' : 'text';
+                $placeholder = ($type === 'date') ? 'ДД.ММ.ГГГГ' : '';
+                echo html_writer::empty_tag('input', [
+                    'type' => $inputtype,
+                    'name' => $inputid,
+                    'id' => $inputid,
+                    'value' => htmlspecialchars($currentvalue),
+                    'class' => 'form-control',
+                    'placeholder' => $placeholder
+                ]);
+                echo html_writer::end_tag('td');
+                
+                echo html_writer::end_tag('tr');
+            }
+        }
+    }
+    
+    echo html_writer::end_tag('tbody');
+    echo html_writer::end_tag('table');
+    
+    // Form buttons
+    echo html_writer::start_div('mt-2');
+    echo html_writer::tag('button', get_string('applyfilters', 'local_extcsv') ?: 'Применить фильтры', [
+        'type' => 'submit',
+        'class' => 'btn btn-primary'
+    ]);
+    echo ' ';
+    echo html_writer::link(
+        new moodle_url('/local/extcsv/view.php', ['id' => $id, 'action' => 'resetfilters']),
+        get_string('resetfilters', 'local_extcsv') ?: 'Сбросить фильтры',
+        ['class' => 'btn btn-secondary']
+    );
+    echo html_writer::end_div();
+    
+    echo html_writer::end_tag('form');
+    echo html_writer::end_tag('div'); // card-body
+    echo html_writer::end_tag('div'); // collapse
+    echo html_writer::end_tag('div'); // card
+    echo html_writer::end_div(); // mb-3
+    
+    // Add JavaScript to update icon on toggle
+    $PAGE->requires->js_init_code("
+        (function() {
+            var spoiler = document.getElementById('{$spoilerid}');
+            var icon = document.getElementById('{$iconid}');
+            if (spoiler && icon) {
+                spoiler.addEventListener('show.bs.collapse', function() {
+                    icon.textContent = '▼';
+                });
+                spoiler.addEventListener('hide.bs.collapse', function() {
+                    icon.textContent = '▶';
+                });
+            }
+        })();
+    ");
+    
+    // Update page URL to include filters for pagination
+    $PAGE->set_url(new moodle_url('/local/extcsv/view.php', $filterurlparams));
+}
 
 if ($total == 0) {
     echo html_writer::div(get_string('nodata', 'local_extcsv'), 'alert alert-info');
@@ -223,7 +426,12 @@ if ($total == 0) {
 
     // Pagination
     if ($total > $perpage) {
-        echo $OUTPUT->paging_bar($total, $page, $perpage, $PAGE->url);
+        // Preserve filters in pagination URL
+        $paginationurl = $PAGE->url;
+        if ($hasactivefilters) {
+            $paginationurl = new moodle_url('/local/extcsv/view.php', $filterurlparams);
+        }
+        echo $OUTPUT->paging_bar($total, $page, $perpage, $paginationurl);
     }
 }
 

@@ -487,5 +487,271 @@ class data_manager {
 
         return $names;
     }
+
+    /**
+     * Parse date string to timestamp
+     * Supports formats: DD.MM.YYYY, DD-MM-YYYY
+     *
+     * @param string $datestr Date string
+     * @return int|null Timestamp or null if parsing fails
+     */
+    public static function parse_date_string($datestr) {
+        if (empty($datestr)) {
+            return null;
+        }
+
+        $datestr = trim($datestr);
+
+        // Try DD.MM.YYYY format
+        if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $datestr, $matches)) {
+            $day = (int)$matches[1];
+            $month = (int)$matches[2];
+            $year = (int)$matches[3];
+            if (checkdate($month, $day, $year)) {
+                return mktime(0, 0, 0, $month, $day, $year);
+            }
+        }
+
+        // Try DD-MM-YYYY format
+        if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $datestr, $matches)) {
+            $day = (int)$matches[1];
+            $month = (int)$matches[2];
+            $year = (int)$matches[3];
+            if (checkdate($month, $day, $year)) {
+                return mktime(0, 0, 0, $month, $day, $year);
+            }
+        }
+
+        // Fallback to strtotime
+        $timestamp = strtotime($datestr);
+        return $timestamp !== false ? $timestamp : null;
+    }
+
+    /**
+     * Get available operators for a field type
+     *
+     * @param string $type Field type
+     * @return array Array of operator => label
+     */
+    public static function get_operators_for_type($type) {
+        switch ($type) {
+            case self::TYPE_TEXT:
+                return [
+                    '=' => '=',
+                    'contains' => (get_string('contains', 'local_extcsv') ?: 'содержит'),
+                    '!=' => '!=',
+                ];
+            case self::TYPE_INT:
+            case self::TYPE_FLOAT:
+                return [
+                    '=' => '=',
+                    '!=' => '!=',
+                    '<' => '<',
+                    '>' => '>',
+                ];
+            case self::TYPE_DATE:
+                return [
+                    '=' => '=',
+                    '!=' => '!=',
+                    '<' => '<',
+                    '>' => '>',
+                ];
+            case self::TYPE_BOOL:
+                return [
+                    '=' => '=',
+                    '!=' => '!=',
+                ];
+            case self::TYPE_JSON:
+                return [
+                    '=' => '=',
+                    'contains' => (get_string('contains', 'local_extcsv') ?: 'содержит'),
+                ];
+            default:
+                return [
+                    '=' => '=',
+                    '!=' => '!=',
+                ];
+        }
+    }
+
+    /**
+     * Convert filter value to appropriate type for comparison
+     *
+     * @param mixed $value Filter value
+     * @param string $type Field type
+     * @return mixed Converted value
+     */
+    protected static function convert_filter_value($value, $type) {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        switch ($type) {
+            case self::TYPE_INT:
+                return (int)$value;
+            case self::TYPE_FLOAT:
+                return (float)$value;
+            case self::TYPE_BOOL:
+                $val = strtolower($value);
+                return in_array($val, ['1', 'true', 'yes', 'y', 'да', 'д'], true) ? 1 : 0;
+            case self::TYPE_DATE:
+                return self::parse_date_string($value);
+            case self::TYPE_TEXT:
+            case self::TYPE_JSON:
+            default:
+                return $value;
+        }
+    }
+
+    /**
+     * Build WHERE conditions for filters
+     *
+     * @param array $filters Filters array: ['fieldname' => ['operator' => '=', 'value' => 'value'], ...]
+     * @param array $fieldtypemapping Mapping of field names to types: ['fieldname' => 'type', ...]
+     * @return array ['where' => string, 'params' => array]
+     */
+    protected static function build_filter_conditions($filters, $fieldtypemapping) {
+        global $DB;
+
+        $where = [];
+        $params = [];
+        $paramcounter = 0;
+
+        foreach ($filters as $fieldname => $filter) {
+            if (empty($filter['value']) || trim($filter['value']) === '') {
+                continue; // Skip empty filters
+            }
+
+            $operator = $filter['operator'] ?? '=';
+            $value = $filter['value'];
+            $type = $fieldtypemapping[$fieldname] ?? self::TYPE_TEXT;
+
+            // Convert value based on type
+            $convertedvalue = self::convert_filter_value($value, $type);
+            if ($convertedvalue === null) {
+                continue; // Skip if conversion failed
+            }
+
+            // Escape field name
+            $escapedfield = '`' . str_replace('`', '``', $fieldname) . '`';
+            $paramname = 'filter' . $paramcounter++;
+
+            // Build condition based on operator
+            switch ($operator) {
+                case 'contains':
+                    if ($type === self::TYPE_TEXT || $type === self::TYPE_JSON) {
+                        $where[] = "{$escapedfield} LIKE :{$paramname}";
+                        $params[$paramname] = '%' . $DB->sql_like_escape($convertedvalue) . '%';
+                    } else {
+                        // For other types, use equals
+                        $where[] = "{$escapedfield} = :{$paramname}";
+                        $params[$paramname] = $convertedvalue;
+                    }
+                    break;
+                case '!=':
+                    $where[] = "{$escapedfield} != :{$paramname}";
+                    $params[$paramname] = $convertedvalue;
+                    break;
+                case '<':
+                    $where[] = "{$escapedfield} < :{$paramname}";
+                    $params[$paramname] = $convertedvalue;
+                    break;
+                case '>':
+                    $where[] = "{$escapedfield} > :{$paramname}";
+                    $params[$paramname] = $convertedvalue;
+                    break;
+                case '=':
+                default:
+                    $where[] = "{$escapedfield} = :{$paramname}";
+                    $params[$paramname] = $convertedvalue;
+                    break;
+            }
+        }
+
+        return [
+            'where' => !empty($where) ? implode(' AND ', $where) : '',
+            'params' => $params
+        ];
+    }
+
+    /**
+     * Get data rows for a source with filters
+     *
+     * @param int $sourceid
+     * @param array $filters Filters array: ['fieldname' => ['operator' => '=', 'value' => 'value'], ...]
+     * @param array $fieldtypemapping Mapping of field names to types: ['fieldname' => 'type', ...]
+     * @param int $limitfrom
+     * @param int $limitnum
+     * @param string $fields Fields to select (default: '*' for all fields)
+     * @return array
+     */
+    public static function get_source_data_filtered($sourceid, $filters, $fieldtypemapping, $limitfrom = 0, $limitnum = 0, $fields = '*') {
+        global $DB;
+
+        // Build base WHERE condition
+        $where = ['`sourceid` = :sourceid'];
+        $params = ['sourceid' => $sourceid];
+
+        // Add filter conditions
+        if (!empty($filters)) {
+            $filterconditions = self::build_filter_conditions($filters, $fieldtypemapping);
+            if (!empty($filterconditions['where'])) {
+                $where[] = $filterconditions['where'];
+                $params = array_merge($params, $filterconditions['params']);
+            }
+        }
+
+        // Escape field names with backticks
+        if ($fields !== '*') {
+            $fieldlist = explode(',', $fields);
+            $fieldlist = array_map('trim', $fieldlist);
+            $fieldlist = array_map(function($field) {
+                return '`' . str_replace('`', '``', $field) . '`';
+            }, $fieldlist);
+            $fields = implode(',', $fieldlist);
+        }
+
+        $wheresql = implode(' AND ', $where);
+
+        return $DB->get_records_select(
+            'local_extcsv_data',
+            $wheresql,
+            $params,
+            '`rownum` ASC',
+            $fields,
+            $limitfrom,
+            $limitnum
+        );
+    }
+
+    /**
+     * Count data rows for a source with filters
+     *
+     * @param int $sourceid
+     * @param array $filters Filters array: ['fieldname' => ['operator' => '=', 'value' => 'value'], ...]
+     * @param array $fieldtypemapping Mapping of field names to types: ['fieldname' => 'type', ...]
+     * @return int
+     */
+    public static function count_source_data_filtered($sourceid, $filters, $fieldtypemapping) {
+        global $DB;
+
+        // Build base WHERE condition
+        $where = ['`sourceid` = :sourceid'];
+        $params = ['sourceid' => $sourceid];
+
+        // Add filter conditions
+        if (!empty($filters)) {
+            $filterconditions = self::build_filter_conditions($filters, $fieldtypemapping);
+            if (!empty($filterconditions['where'])) {
+                $where[] = $filterconditions['where'];
+                $params = array_merge($params, $filterconditions['params']);
+            }
+        }
+
+        $wheresql = implode(' AND ', $where);
+
+        return $DB->count_records_select('local_extcsv_data', $wheresql, $params);
+    }
 }
 
