@@ -159,3 +159,11 @@ $string['shortname_reserved'] = 'Short name "{$a}" is reserved and cannot be use
 $string['shortname_internal'] = 'Short name "{$a}" conflicts with internal field name and cannot be used';
 $string['shortname_duplicate'] = 'Short name "{$a}" is already used by another column';
 
+// Filters
+$string['filters'] = 'Filters';
+$string['field'] = 'Field';
+$string['operator'] = 'Operator';
+$string['value'] = 'Value';
+$string['applyfilters'] = 'Apply filters';
+$string['resetfilters'] = 'Reset filters';
+$string['contains'] = 'contains';

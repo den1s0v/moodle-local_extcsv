@@ -538,7 +538,7 @@ class data_manager {
             case self::TYPE_TEXT:
                 return [
                     '=' => '=',
-                    'contains' => (get_string('contains', 'local_extcsv') ?: 'содержит'),
+                    'contains' => get_string('contains', 'local_extcsv'),
                     '!=' => '!=',
                 ];
             case self::TYPE_INT:
@@ -564,7 +564,7 @@ class data_manager {
             case self::TYPE_JSON:
                 return [
                     '=' => '=',
-                    'contains' => (get_string('contains', 'local_extcsv') ?: 'содержит'),
+                    'contains' => get_string('contains', 'local_extcsv'),
                 ];
             default:
                 return [

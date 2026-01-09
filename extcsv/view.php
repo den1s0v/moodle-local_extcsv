@@ -232,7 +232,7 @@ if ($hascolumnsconfig) {
         'aria-expanded' => $hasactivefilters ? 'true' : 'false',
         'aria-controls' => $spoilerid
     ]);
-    echo html_writer::tag('strong', (get_string('filters', 'local_extcsv') ?: 'Фильтры') . ' ');
+    echo html_writer::tag('strong', get_string('filters', 'local_extcsv') . ' ');
     $iconid = $spoilerid . '-icon';
     echo html_writer::tag('span', $hasactivefilters ? '▼' : '▶', ['id' => $iconid]);
     echo html_writer::end_tag('div');
@@ -255,9 +255,9 @@ if ($hascolumnsconfig) {
     echo html_writer::start_tag('table', ['class' => 'generaltable']);
     echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
-                echo html_writer::tag('th', get_string('field', 'local_extcsv') ?: 'Поле', ['style' => 'width: 30%;']);
-                echo html_writer::tag('th', get_string('operator', 'local_extcsv') ?: 'Оператор', ['style' => 'width: 20%;']);
-                echo html_writer::tag('th', get_string('value', 'local_extcsv') ?: 'Значение', ['style' => 'width: 50%;']);
+                echo html_writer::tag('th', get_string('field', 'local_extcsv'), ['style' => 'width: 30%;']);
+                echo html_writer::tag('th', get_string('operator', 'local_extcsv'), ['style' => 'width: 20%;']);
+                echo html_writer::tag('th', get_string('value', 'local_extcsv'), ['style' => 'width: 50%;']);
     echo html_writer::end_tag('tr');
     echo html_writer::end_tag('thead');
     echo html_writer::start_tag('tbody');
@@ -328,14 +328,14 @@ if ($hascolumnsconfig) {
     
     // Form buttons
     echo html_writer::start_div('mt-2');
-    echo html_writer::tag('button', get_string('applyfilters', 'local_extcsv') ?: 'Применить фильтры', [
+    echo html_writer::tag('button', get_string('applyfilters', 'local_extcsv'), [
         'type' => 'submit',
         'class' => 'btn btn-primary'
     ]);
     echo ' ';
     echo html_writer::link(
         new moodle_url('/local/extcsv/view.php', ['id' => $id, 'action' => 'resetfilters']),
-        get_string('resetfilters', 'local_extcsv') ?: 'Сбросить фильтры',
+        get_string('resetfilters', 'local_extcsv'),
         ['class' => 'btn btn-secondary']
     );
     echo html_writer::end_div();

@@ -159,3 +159,11 @@ $string['shortname_reserved'] = 'Короткое имя "{$a}" зарезерв
 $string['shortname_internal'] = 'Короткое имя "{$a}" конфликтует с внутренним именем поля и не может быть использовано';
 $string['shortname_duplicate'] = 'Короткое имя "{$a}" уже используется другой колонкой';
 
+// Filters
+$string['filters'] = 'Фильтры';
+$string['field'] = 'Поле';
+$string['operator'] = 'Оператор';
+$string['value'] = 'Значение';
+$string['applyfilters'] = 'Применить фильтры';
+$string['resetfilters'] = 'Сбросить фильтры';
+$string['contains'] = 'содержит';
