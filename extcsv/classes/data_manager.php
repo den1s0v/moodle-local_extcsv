@@ -312,9 +312,7 @@ class data_manager {
                 return in_array($val, ['1', 'true', 'yes', 'y', 'да', 'д'], true) ? 1 : 0;
 
             case self::TYPE_DATE:
-                // Try to parse date string to timestamp
-                $timestamp = strtotime($value);
-                return $timestamp !== false ? $timestamp : null;
+                return self::parse_date_string($value);
 
             case self::TYPE_JSON:
                 // Validate JSON
@@ -490,7 +488,7 @@ class data_manager {
 
     /**
      * Parse date string to timestamp
-     * Supports formats: DD.MM.YYYY, DD-MM-YYYY
+     * Supports formats: DD.MM, DD.MM.YYYY, DD-MM, DD-MM-YYYY
      *
      * @param string $datestr Date string
      * @return int|null Timestamp or null if parsing fails
@@ -501,6 +499,39 @@ class data_manager {
         }
 
         $datestr = trim($datestr);
+
+        // Try DD.MM format (without year).
+        // Select nearest date between current and next year.
+        if (preg_match('/^(\d{1,2})[.-](\d{1,2})$/', $datestr, $matches)) {
+            $day = (int)$matches[1];
+            $month = (int)$matches[2];
+            $currentyear = (int)date('Y');
+            $nextyear = $currentyear + 1;
+            $now = time();
+            $candidates = [];
+
+            if (checkdate($month, $day, $currentyear)) {
+                $currenttimestamp = mktime(0, 0, 0, $month, $day, $currentyear);
+                $candidates[] = $currenttimestamp;
+            }
+
+            if (checkdate($month, $day, $nextyear)) {
+                $nexttimestamp = mktime(0, 0, 0, $month, $day, $nextyear);
+                $candidates[] = $nexttimestamp;
+            }
+
+            if (empty($candidates)) {
+                return null;
+            }
+
+            if (count($candidates) === 1) {
+                return $candidates[0];
+            }
+
+            $currentdiff = abs($candidates[0] - $now);
+            $nextdiff = abs($candidates[1] - $now);
+            return $nextdiff <= $currentdiff ? $candidates[1] : $candidates[0];
+        }
 
         // Try DD.MM.YYYY format
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $datestr, $matches)) {
