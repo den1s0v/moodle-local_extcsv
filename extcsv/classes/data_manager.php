@@ -488,7 +488,7 @@ class data_manager {
 
     /**
      * Parse date string to timestamp
-     * Supports formats: DD.MM, DD.MM.YYYY, DD-MM, DD-MM-YYYY
+     * Supports formats: DD.MM, DD-MM, DD.MM.YY, DD-MM-YY, DD.MM.YYYY, DD-MM-YYYY
      *
      * @param string $datestr Date string
      * @return int|null Timestamp or null if parsing fails
@@ -533,21 +533,12 @@ class data_manager {
             return $nextdiff <= $currentdiff ? $candidates[1] : $candidates[0];
         }
 
-        // Try DD.MM.YYYY format
-        if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $datestr, $matches)) {
+        // Try DD.MM.(YY)YY or DD-MM-(YY)YY formats.
+        if (preg_match('/^(\d{1,2})[.-](\d{1,2})[.-](\d{2}|\d{4})$/', $datestr, $matches)) {
             $day = (int)$matches[1];
             $month = (int)$matches[2];
-            $year = (int)$matches[3];
-            if (checkdate($month, $day, $year)) {
-                return mktime(0, 0, 0, $month, $day, $year);
-            }
-        }
-
-        // Try DD-MM-YYYY format
-        if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $datestr, $matches)) {
-            $day = (int)$matches[1];
-            $month = (int)$matches[2];
-            $year = (int)$matches[3];
+            $yearstr = $matches[3];
+            $year = strlen($yearstr) === 2 ? (int)('20' . $yearstr) : (int)$yearstr;  // Valid until 2099 only. Fix it if you are reading this in the future.
             if (checkdate($month, $day, $year)) {
                 return mktime(0, 0, 0, $month, $day, $year);
             }
