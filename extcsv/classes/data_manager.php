@@ -361,37 +361,44 @@ class data_manager {
             throw new moodle_exception('nocolumnsmapped', 'local_extcsv');
         }
 
-        // Delete existing data for this source
-        $DB->delete_records('local_extcsv_data', ['sourceid' => $sourceid]);
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            // Delete existing data for this source
+            $DB->delete_records('local_extcsv_data', ['sourceid' => $sourceid]);
 
-        // Insert new data
-        $saved = 0;
-        $timecreated = time();
+            // Insert new data
+            $saved = 0;
+            $timecreated = time();
 
-        foreach ($csvrows as $rownum => $row) {
-            // Skip empty rows
-            if (empty(array_filter($row, function($val) { return trim($val) !== ''; }))) {
-                continue;
+            foreach ($csvrows as $rownum => $row) {
+                // Skip empty rows
+                if (empty(array_filter($row, function($val) { return trim($val) !== ''; }))) {
+                    continue;
+                }
+
+                $record = new \stdClass();
+                $record->sourceid = $sourceid;
+                $record->rownum = $rownum + 1; // 1-based row numbers
+                $record->timecreated = $timecreated;
+
+                // Map values according to mapping
+                foreach ($mapping as $colindex => $mapinfo) {
+                    $value = isset($row[$colindex]) ? $row[$colindex] : '';
+                    $converted = self::convert_value($value, $mapinfo['type']);
+                    $fieldname = $mapinfo['field'];
+                    $record->$fieldname = $converted;
+                }
+
+                $DB->insert_record('local_extcsv_data', $record);
+                $saved++;
             }
 
-            $record = new \stdClass();
-            $record->sourceid = $sourceid;
-            $record->rownum = $rownum + 1; // 1-based row numbers
-            $record->timecreated = $timecreated;
-
-            // Map values according to mapping
-            foreach ($mapping as $colindex => $mapinfo) {
-                $value = isset($row[$colindex]) ? $row[$colindex] : '';
-                $converted = self::convert_value($value, $mapinfo['type']);
-                $fieldname = $mapinfo['field'];
-                $record->$fieldname = $converted;
-            }
-
-            $DB->insert_record('local_extcsv_data', $record);
-            $saved++;
+            $transaction->allow_commit();
+            return $saved;
+        } catch (\Throwable $e) {
+            $transaction->rollback($e);
+            throw $e;
         }
-
-        return $saved;
     }
 
     /**
